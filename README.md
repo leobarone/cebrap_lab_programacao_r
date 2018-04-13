@@ -1,6 +1,6 @@
 #  Cebrap.lab - Programação em R
 
-## 1. Informações básicas
+## Informações básicas
 
 ### Intrutores: 
 Leonardo S. Barone e Thiago Meireles
@@ -13,10 +13,10 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 ## Roteiros de aula, calendário e tutoriais
 
-- 16/04/2018 - [Introdução ao curso e R Básico](https://github.com/leobarone/FLS6397_2018/blob/master/classes/class01.md)
-- 17/04/2018 - [Do básico ao intermediário](https://github.com/leobarone/FLS6397_2018/blob/master/classes/class02.md
-- 18/04/2018 - [Manipulação de dados no R](https://github.com/leobarone/FLS6397_2018/blob/master/classes/class03.md)
-- 19/04/2018 - [Visualização de dados e a gramática de gráficos _ggplot2_](https://github.com/leobarone/FLS6397_2018/blob/master/classes/class04.md) 
+- [16/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class01.md) - Introdução ao curso e R Básico
+- [17/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class01.md) - Do básico ao intermediário
+- [18/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class01.md)- Manipulação de dados no R
+- [19/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class01.md) - Visualização de dados e a gramática de gráficos _ggplot2_
 - 20/04/2018 - Em aberto
 
 ## Referências bibliográficas
