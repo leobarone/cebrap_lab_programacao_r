@@ -13,10 +13,10 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 ## Roteiros, calendário e tutoriais
 
-- [16/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180416.md) - Introdução ao curso e R Básico
-- [17/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class02.md) - Do básico ao intermediário
-- [18/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class03.md)- Manipulação de dados no R
-- [19/04/2018](https://github.com/leobarone/https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/classes/class04.md) - Visualização de dados e a gramática de gráficos _ggplot2_
+- [16/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180416.md) - Introdução ao curso e R Básico
+- [17/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180417.md) - Do básico ao intermediário
+- [18/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180418.md)- Manipulação de dados no R
+- [19/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180419.md) - Visualização de dados e a gramática de gráficos _ggplot2_
 - 20/04/2018 - Em aberto
 
 ## Referências bibliográficas
