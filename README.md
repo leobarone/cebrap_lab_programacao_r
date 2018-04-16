@@ -22,6 +22,6 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 ## Referências bibliográficas
 
 - Grolemund, Garrett (2014). Hands-On Programming with R. Ed: O'Reilly Media. Não distribuído gratuitamente. Informações no site da editora [aqui](http://shop.oreilly.com/product/0636920028574.do)
-- Wichkam, Hadley e Grolemund, Garrett (2016). R for Data Science. Ed: O'Reilly Media. Disponível gratuitamente Disponível gratuitamente [aqui](https://www.tidytextmining.com/)
+- Wichkam, Hadley e Grolemund, Garrett (2016). R for Data Science. Ed: O'Reilly Media. Disponível gratuitamente Disponível gratuitamente [aqui](http://r4ds.had.co.nz/data-visualisation.html)
 - Wichkam, Hadley (2014). Advanced R. Ed: Chapman and Hall/CRC. Disponível gratuitamente Disponível gratuitamente [aqui](http://adv-r.had.co.nz/)
 - Gillespie, Colin e Lovelace, Robin (2016). Efficient R programming. Ed: O'Reilly Media. Disponível gratuitamente Disponível gratuitamente [aqui](https://csgillespie.github.io/efficientR/)
