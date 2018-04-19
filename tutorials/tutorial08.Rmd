@@ -364,7 +364,3 @@ ggplot(fake, aes(x = idade, y = renda, colour = sexo)) +
 ```
 
 Ufa! Quanta coisa em um só gráfico!
-
-## Atribuindo e Exportando
-
-
