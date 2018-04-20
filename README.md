@@ -3,12 +3,15 @@
 ## Informações básicas
 
 ### Instrutores: 
+
 Leonardo S. Barone e Thiago Meireles
 
 ### Data, Hora e Local
+
 De 16 a 20 de Abril de 2018, das 9h às 13h, no auditório do CEBRAP
 
 ## Apresentação
+
 O curso oferece uma iniciação à lógica de programação e ao uso da linguagem R para organização, análise e apresentação de dados para pesquisa social. O foco do curso é o desenvolvimento da habilidade de programação para solução de problemas diversos relacionados ao manejo de dados com fins de pesquisa, com ênfase na análise exploratória de dados e estatísticas descritivas. R é uma linguagem de código aberto e desenvolvimento comunitário e se tornou uma das linguagens de programação e análise de dados mais populares em diversos campos científicos, inclusive nas ciências sociais, e profissionais.
 
 ## Roteiros, calendário e tutoriais
@@ -17,7 +20,7 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 - [17/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180417.md) - Do básico ao intermediário
 - [18/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180418.md)- Manipulação de dados no R
 - [19/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180419.md) - Visualização de dados e a gramática de gráficos _ggplot2_
-- 20/04/2018 - Em aberto
+- [20/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180419.md) - Desafios
 
 ## Referências bibliográficas
 
