@@ -1,18 +1,14 @@
 #  Cebrap.lab - Programação em R
 
-## Edições anteriores:
-
-[16 a 20 de Abril de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180416.md)
-
 ## Informações básicas
 
 ### Instrutores: 
 
-Leonardo S. Barone
+Leonardo S. Barone e Thiago Meireles
 
 ### Data, Hora e Local
 
-De 20 a 24 de Agosto de 2018, das 9h às 13h, no laboratório do CEM, no CEBRAP
+De 16 a 20 de Abril de 2018, das 9h às 13h, no auditório do CEBRAP
 
 ## Apresentação
 
@@ -20,11 +16,11 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 ## Roteiros, calendário e tutoriais
 
-- [20/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180820.md) - Introdução ao curso e R Básico
-- [21/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180821.md) - Do básico ao intermediário
-- [22/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180822.md)- Manipulação de dados no R
-- [23/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180823.md) - Visualização de dados e a gramática de gráficos _ggplot2_
-- [24/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180824.md) - Desafios
+- [16/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180416.md) - Introdução ao curso e R Básico
+- [17/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180417.md) - Do básico ao intermediário
+- [18/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180418.md)- Manipulação de dados no R
+- [19/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180419.md) - Visualização de dados e a gramática de gráficos _ggplot2_
+- [20/04/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180419.md) - Desafios
 
 ## Referências bibliográficas
 

@@ -27,7 +27,7 @@ age = as.integer(rnorm(n = n_amostra, mean = 35, sd = 5)) +
 income = rnorm(n = n_amostra, mean = 0, sd = 1) * 1000 + 
   age/5 * rnorm(n = n_amostra, mean = 500, sd = 300) +
   as.numeric(sex) * rnorm(n_amostra, mean = 1000, sd = 400) +
-  as.numeric(sex) * age/5 * rnorm(n_amostra, mean = 1000, sd = 400) +
+  as.numeric(sex) * age/5 * rnorm(n_amostra, mean = 1000, sd = 500) +
   kids * 300
 
 fake <- data.frame(idade = age, 
