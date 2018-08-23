@@ -10,7 +10,7 @@ A "gramática" básica do R é pouco elegante e essa é uma das barreiras ao apr
 
 ## Variáveis e data frames
 
-Para esta atividade, vamos trabalhar com um banco de dados falso que criei ("fake_data" -- está em inglês, pois é reciclagem de outro curso que lecionei).
+Para esta atividade, vamos trabalhar com um banco de dados falso que criei ("fake" -- está em inglês, pois é reciclagem de outro curso que lecionei).
 
 Vamos nos adaptar a abrir dados com funções dos pacotes _readr_, _data.table_ e _haven_. Para este exercício, podemos usar _read\_delim_:
 
