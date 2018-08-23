@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Manipulação de dados com a gramática básica do pacote dplyr
+# Manipulação de dados com a gramática do pacote dplyr
 
 ## Introdução ao pacote dplyr
 
