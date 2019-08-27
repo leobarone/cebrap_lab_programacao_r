@@ -2,8 +2,8 @@
 
 ## Edições anteriores:
 
-[16 a 20 de Abril de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180416.md)
-[20 a 24 de Agosto de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180820.md)
+- [16 a 20 de Abril de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180416.md)
+- [20 a 24 de Agosto de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180820.md)
 
 ## Informações básicas
 
