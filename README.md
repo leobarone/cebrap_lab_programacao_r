@@ -3,6 +3,7 @@
 ## Edições anteriores:
 
 [16 a 20 de Abril de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180416.md)
+[20 a 24 de Agosto de 2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/README_20180820.md)
 
 ## Informações básicas
 
@@ -12,7 +13,7 @@ Leonardo S. Barone
 
 ### Data, Hora e Local
 
-De 20 a 24 de Agosto de 2018, das 9h às 13h, no laboratório do CEM, no CEBRAP
+De 02 a 06 de Setembro de 2019, das 9h às 13h, no laboratório do CEM, no CEBRAP
 
 ## Apresentação
 
@@ -20,15 +21,15 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 ## Roteiros, calendário e tutoriais
 
-- [20/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180820.md) - Introdução ao curso e R Básico
-- [21/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180821.md) - Do básico ao intermediário
-- [22/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180822.md)- Manipulação de dados no R
-- [23/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180823.md) - Visualização de dados e a gramática de gráficos _ggplot2_
-- [24/08/2018](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20180824.md) - Desafios
+- [02/09/2019] - Introdução ao curso e R Básico
+- [03/09/2019] - Do básico ao intermediário
+- [04/09/2019] - Manipulação de dados no R
+- [05/09/2019] - Visualização de dados e a gramática de gráficos _ggplot2_
+- [06/09/2019] - Desafios
 
 ## Referências bibliográficas
 
-- Grolemund, Garrett (2014). Hands-On Programming with R. Ed: O'Reilly Media. Não distribuído gratuitamente. Informações no site da editora [aqui](http://shop.oreilly.com/product/0636920028574.do)
-- Wichkam, Hadley e Grolemund, Garrett (2016). R for Data Science. Ed: O'Reilly Media. Disponível gratuitamente Disponível gratuitamente [aqui](http://r4ds.had.co.nz/data-visualisation.html)
+- Grolemund, Garrett (2014). Hands-On Programming with R. Ed: O'Reilly Media. Disponível gratuitamente [aqui](https://rstudio-education.github.io/hopr/)
+- Wichkam, Hadley e Grolemund, Garrett (2016). R for Data Science. Ed: O'Reilly Media. Disponível gratuitamente [aqui](http://r4ds.had.co.nz/data-visualisation.html)
 - Wichkam, Hadley (2014). Advanced R. Ed: Chapman and Hall/CRC. Disponível gratuitamente Disponível gratuitamente [aqui](http://adv-r.had.co.nz/)
-- Gillespie, Colin e Lovelace, Robin (2016). Efficient R programming. Ed: O'Reilly Media. Disponível gratuitamente Disponível gratuitamente [aqui](https://csgillespie.github.io/efficientR/)
+- Gillespie, Colin e Lovelace, Robin (2016). Efficient R programming. Ed: O'Reilly Media. Disponível gratuitamente [aqui](https://csgillespie.github.io/efficientR/)
