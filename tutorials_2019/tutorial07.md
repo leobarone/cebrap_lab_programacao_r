@@ -1,213 +1,127 @@
----
-title: "Manipulação de dados em R"
-author: "Leonardo Sangali Barone"
-date: "April 03, 2017"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(tidyverse)
 ```
 
-# Bases de dados relacionais com a gramática do pacote dplyr
+# Bases de dados relacionais com a gramática básica do pacote dplyr 
 
-Até agora, partimos de uma única base de dados e fizemos diversas transformações: mudamos de nomes de variáveis, computamos novas variáveis, selecionamos linhas e colunas, agrupamos e ordenamos. A partir de agora vamos aprender a combinar _data frames_ diferentes usando as funções do tipo __join__ do pacote _dplyr_. Vamos começar carregando o pacote:
+Até agora, partimos de uma única base de dados e fizemos diversas transformações: mudamos de nomes de variáveis, computamos novas variáveis, selecionamos linhas e colunas, agrupamos e ordenamos. A partir de agora vamos aprender a combinar _data frames_ diferentes usando as funções do tipo __join__ do pacote _dplyr_ do _tidyverse_. Vamos começar abrindo os pacotes necessários:
+
+# Combinando os arquivos de domicílios e indivíduos da TICDOM
+
+Em pesquisa aplicada é bastante comum encontrarmos dados que têm natureza hierárquica. Por exemplo, em surveys como a PNAD ou a TICDOM, no qual os indívuos são dentro de domicílios, coleta-se dados tanto dos invíduos quanto do domicílios. Como é possível haver mais de um indivíduo em um determinado domicílio, os dados podem ser organizados de duas maneiras diferentes:
+
+1 - repetindo-se para cada indivíduo a informação referente ao domicílio;
+2 - separando as informações em dois arquivos diferentes, um para cada unidade de análise.
+
+A segunda opção é bastante mais eficiente, pois evita a repetição de informações. Em pesquisa como PNAD ou Censo populacional, que resultam em arquivos grandes e que dificultam o armazenamento, transporte e abertura de dados, separar os dados em mais de um arquivo é certamente a melhor opção.
+
+Para combinar dados referentes a domicílios e seus respectivos indivíduos em uma mesma análise é preciso combinar os dois arquivos a partir de um identificador comum a ambas. Essa é uma tarefa bastante simples de ser executada com a gramática do _dplyr_ e esse é o nosso objetivo neste tutorial.
+
+# Abrindo e examinando os arquivos de domicílios e indivíduos
+
+Vamos começar abrindo as bases. Precisamos, como fizemos anteriormente, do endereço na web ou no seu computador de onde estão armazenadas. Podemos guardá-las em um objeto simples de texto para facilitar seu uso:
 
 ```{r}
-library(dplyr)
+ticdom_ind_url <- "http://cetic.br/media/microdados/181/ticdom_2017_individuos_base_de_microdados_v1.3.csv"
+ticdom_dom_url <- "http://cetic.br/media/microdados/153/ticdom_2017_domicilios_base_de_microdados_v1.1.csv"
 ```
 
-# Comparação dos pagamentos entre janeiro de 2011 e janeiro de 2017 no Programa Bolsa Família
-
-No lugar de uma amostra dos dados, como no tutorial anterior, utilizaremos no começo deste tutorial os dados de pagamento do Programa Bolsa Família em um município de pequeno porte: Borá, cidade do interior de São Paulo.
-
-Vamos começar importando os dados do mês de janeiro de cada um dos anos para o município de Borá, que foram extraídos dos dados baixados no Portal da Transparência.
-
-Se você estiver com tempo em sala de aula, faça como exercício a construção desses dados (em vez de baixá-los do repositório do curso). A recomendação é baixar os dados manualmente no Portal da Transparência, abrí-los com a função _fread_ do pacote _data.table_ e selecionar as linhas de Borá com a função _filter_ do pacote _dplyr_. Se não estiver com tempo, use o código abaixo.
+A seguir, utilizaremos a função _read\_csv2_ do pacote _readr_ para carregar as bases:
 
 ```{r}
-library(readr)
-pagamentos11 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/pagamentos11.csv", delim = ";", col_names = T)
-pagamentos17 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/pagamentos17.csv", delim = ";", col_names = T)
+ticdom_ind <- read_csv2(ticdom_ind_url)
+ticdom_dom <- read_csv2(ticdom_dom_url)
 ```
 
-Veja que os dados são semelhantes e têm a mesma estrutura. Esperamos, entretanto, que haja variação entre os anos e que os beneficiários e os valores pagos não sejam os mesmos, seja por que as pessoas entraram e saíram do programa ao longo do tempo, seja por que mudaram de município, seja por que os valores sofreram alteração em virtude de reajuste e mudanças na estrutura das famílias.
-
-Como descobrir tais mudanças? Como saber quem estava em 2011 e também em 2017? Como calcular a variação dos valores para cada beneficiário?
-
-## Exercício
-
-Examine as bases de dados "pagamentos11" e "pagamentos17" antes de começarmos a trabalhar com elas. Faça também as seguintes alterações:
-
-- Renomeie as variáveis "NIS Favorecido", "Nome Favorecido" e "Valor Parcela" para "nis", "nome" e "valor", repectivamente.
-- Transforme a variável valor em numérica.
-- Selecione apenas as três variáveis renomeadas.
-- Quantas linhas tem cada base de dados?
-
-## Resposta parcial ao exercício anterior (3 primeiros itens)
+Note que as bases têm tamanhos diferentes:
 
 ```{r}
-# 2011
-pagamentos11 <- pagamentos11 %>% 
-  rename(nis = `NIS Favorecido`, nome = `Nome Favorecido`, valor = `Valor Parcela`) %>%
-  mutate(valor = gsub(",", "", valor), valor = as.numeric(valor)) %>%
-  select(nis, nome, valor)
-
-# 2017
-pagamentos17 <- pagamentos17 %>% 
-  rename(nis = `NIS Favorecido`, nome = `Nome Favorecido`, valor = `Valor Parcela`) %>%
-  mutate(valor = gsub(",", "", valor), valor = as.numeric(valor)) %>%
-  select(nis, nome, valor)
+dim(ticdom_ind)
+dim(ticdom_dom)
 ```
+A base de indivíduos têm 20490 linhas, cada uma representando um indivíduo, e 220 variáveis.
 
-## Left e Right Join
+A base de domicílios tem 23592 linhas, cada uma representando um domicílio, e 65 variáveis.
 
-Tendo as bases preparadas e sabendo que os beneficiários variam entre os anos, podemos começar a "juntá-las".
+Há algo contra intuitivo nestas informações. Se cada domicílio pode conter mais de un indivíduo, deveríamos esperar mais unidades do segundo do que do primeiro.
 
-O elemento essencial dos "joins", ou seja, das combinações de bases de dados, é que haja uma variável que associe observações em uma base com observações em outras. Algumas variáveis costumam ser candidatas naturais para tal tarefa: CPF, NIS e Título de Eleitor, para indíduos e Código de município e UF para unidades político-administrativas. Mas, veremos adiante, podemos ser criativos e utilizar diversas outras "chaves" para conectar tabelas. O identificador que temos disponível em nossos dados é o NIS.
+Certamente encontraremos domicílios que não estão associados a nenhum indivíduo da base carregada -- no caso da TICDOM, esses domicílios estão associados a outras pesquisas.
 
-"Letf join" e "right join" são os nomes dados às combinações que mantém todas as linhas de uma das bases de dados, mesmo sem haver correspondente na outra tabela, e inclui apenas os dados da segunda base que encontram correspondência na primeira tabela.
+É possível que encontremos indivíduos que não estão em nenhum domicílio, mas, por se tratar de uma pesquisa cujo desenho amostral faz a seleção de indivíduos após a seleção de domicílios, este caso seria anômalo.
 
-Vamos operar os dois "joins" e ver o que ocorre. Primeiro, "left join":
+Vamos ver como combinar as duas bases e quais são as nossas opções.
+
+# Combinando à direita e à esquerda
+
+O primeiro passo ao combinar bases de dados é localizar, em ambas os data frames, qual é a 'chave' ou 'identificador' que associa as unidades de uma base às de outra.
+
+No caso da TICDOM, o 'id\_domicilio' cumpre esse papel. Cada domicílio tem um identificador único que também é encontrado nos dados individuais, podendo ser repetido se houver mais de um indivíduo associado a um domicílio.
+
+A chave não precisa estar em uma única variável. O IBGE costuma utilizar duas ou mais variáveis que, combinadas, criam a chave que associa diferentes bases. Códigos de unidades geográficas -- código de UF ou de município, por exemplo -- costumam ser bons identificadores. CPF, NIS e título de eleitor costumam ser utilizados como chave para indivíduos, e, em casos extremos, até mesmo nome, com o risco de haver ambiguidades.
+
+O segundo passo é escolher qual será a base posicionada "à esquerda" e qual será posicionada "à direita". Uma vez posicionadas, utilizamos alguma função do tipo "join" para juntá-las. Vejo o exemplo antes de detalharmos as escolhas de posição. Vamos começar fazendo um _left\_join_.
 
 ```{r}
-comb_left <- left_join(pagamentos11, pagamentos17, by = "nis")
+ticdom_all_ind <- left_join(ticdom_ind, ticdom_dom, by = 'id_domicilio')
 ```
 
-Veja que informamos ao R que a variável que conecta as tabelas é "nis" informando o parâmetro "by".
+O data frame que aparece do lado esquedo do parêntese é obviamente, o que foi posicionado à esquerda. Ao utilizarmos o verbo _left\_join_ estamos fazendo a seguinte opção: 'manter na nova base todas as unidades que existiam na base à esquerda e adicionar a elas as colunas da base da direita quando houver correspondência'.
 
-Quantas linhas resultaram da combinação? Exatamente o mesmo número de linhas de "pagamentos11". Use o _View_ para ver o resultado.
+No nosso caso, todos os indivíduos permanecerão no novo data frame. Se o 'id\_domicilio' desses indivíduos for encontrado na base de domicílios, as informações do domicílio serão adicionadas como novas colunas. Se, por outro lado, o 'id\_domicilio' desses indivíduos não constar na base de domicílios, as novas colunas existirão, porém serão preenchidas com NA.
 
-Note que há duas variáveis de valor, uma com final ".x" e outra com o final ".y". Isso ocorre por que as duas bases tem os mesmos nomes de variáveis. ".x" significa que a variável veio da primeira tabela do "join" e ".y", da segunda. O mesmo ocorre com a variável "nome". Vamos aproveitar e renomeá-las:
+Recapitulando, com _left\_join_ as unidades da base à esquerda permanecerão e a base da direita contribuirá com novas colunas quando houver correspondência.
+
+Note que podemos utilizar o \%>\% para fazer a operação. A grafia diferente não muda em nada o resultado. Esse é o uso mais comum:
 
 ```{r}
-comb_left <- comb_left %>% rename(valor11 = valor.x, nome11 = nome.x, 
-                                  valor17 = valor.y, nome17 = nome.y)
+ticdom_all_ind <- ticdom_ind %>%
+  left_join(ticdom_dom, by = 'id_domicilio')
 ```
 
-Note que em diversas observações o valor e o nome para 2017 contém "NA", que é o símbolo do R para "missing values". O que isso significa? Significa que aquela observações existia em 2011, mas não em 2017. Ao não encontrar correspondência, o R manteve a observação, mas não inseriu nenhum valor.
+Dentro do argumento "by" inserimos a chave -- ou um vetor de chaves -- que farão a 'ligação' entre as bases.
 
-Se o número de linhas da combinação é o mesmo de 2011, onde estão as observações de 2017 que faltam? Não foram incluídas. O "left join" garante que todas as observações de 2011 sejam mantidas, mesmo sem correspondência, mas exclui todas as observações de 2017 que não encontrem par em 2011.
-
-Vamos deixar de lado rapidamente esta primeira combinação e realizar o "right join" das mesmas tabelas:
+Note que, para os dados utilizados, encontramos um base com o mesmo número de linhas que o data frame posicionado à esquerda, como esperávamos. Podemos notar que as variáveis que são excluivas do arquivo de domicílios -- como AREA, radio e automovel -- estão no novo data frame.
 
 ```{r}
-comb_right <- right_join(pagamentos11, pagamentos17, by = "nis")
+names(ticdom_all_ind)
 ```
 
-Novamente, vamos renomear as variáveis:
+Se houver variáveis com nomes idênticos em ambos data frames, salvo as variáveis apontadas no parâmetro 'by', cada um receberá o nome original terminados por ".x" e ".y", para esquerda e direita, respectivamente. É isso que ocorre com "QUEST" e "RENDA\_FAMILIAR.y".
+
+O verbo _right\_join_ tem o mesmo funcionamento que _left\_join_, apenas invertendo as funções dos data frames posicionados à direita e à esquerda.
 
 ```{r}
-comb_right <- comb_right %>% rename(valor11 = valor.x, nome11 = nome.x, 
-                                    valor17 = valor.y, nome17 = nome.y)
+ticdom_all_dom <- ticdom_ind %>%
+  right_join(ticdom_dom, by = 'id_domicilio')
 ```
 
-Veja que agora há "missing values" nos valores e nomes de 2011. O "right join" preserva todas as observações de 2017, mesmo sem correspondência em 2011, e não inclui nenhum de 2011 que não encontre correspondência.
-
-Note que "left" e "right" são exatamente a mesma operação, mas com as tabelas em posição (x e y, 1a e 2a, etc) invertidas.
-
-## Inner e Full Join
-
-E se quisermos apenas as observações que estão, com certeza, em ambos os anos? Usamos o "inner join". Veja o resultado (já renomeado):
+Dessa vez, a base resultante tem o mesmo número de linha que a base de domicílios. Nesse caso, porém, nem todos os domicílios encontraram correspondência no data frame de indivíduos. Para tais domicílios, as variáveis originárias da base de indivíduos são preenchidas com NA. Podemos inspecionar isso rapidamente pedindo para observar as linhas com NA para uma variável que só existe no data frame de indivíduos. como "ID\_MORADOR":
 
 ```{r}
-comb_inner <- inner_join(pagamentos11, pagamentos17, by = "nis")
-comb_inner <- comb_inner %>% rename(valor11 = valor.x, nome11 = nome.x, 
-                                    valor17 = valor.y, nome17 = nome.y)
+ticdom_all_dom %>% 
+  filter(is.na(ID_MORADOR))
 ```
 
-Agora, não há "missing values". Permanecem na combinação apenas os casos que estão presentes em ambas tabelas.
+# Interseção de duas bases
 
-Finalmente, o "full join" adota o critério oposto: inclui todas as observações de ambos tabelas, não importando se há ou não correspondência, e insere "missing values" onde não há correspondência:
+E ser quiseremos trabalhar apenas com os casos completos, ou seja, somente os casos para os quais há correspondência em ambos data frame? Esta situação é a interseção entre as duas bases e é produzida pelo verbo _inner\_join_:
 
 ```{r}
-comb_full <- full_join(pagamentos11, pagamentos17, by = "nis")
-comb_full <- comb_full %>% rename(valor11 = valor.x, nome11 = nome.x, 
-                                  valor17 = valor.y, nome17 = nome.y)
+ticdom_inner <- ticdom_ind %>%
+  inner_join(ticdom_dom, by = 'id_domicilio')
 ```
 
-## Semi e anti joins
+Não importa, nessa situação, qual é a base à direita ou à esquerda. Ambas contribuem somemente com os casos 'completos' e todas as sua variáveis.
 
-Os quatro tipos de "join" apresentados anteriormente cobrem a totalidade de situações de combinação entre tabelas a partir de um "chave", ou seja, de um índice ou variável que permita estabelecer a relação entre elas.
+Como, para os dados com os quais trabalhamos, todos os indivíduos encontram correspondência em domicílios -- o contrário não é verdade -- o resultado é idêntico ao produzido com _left\_join_. Mas, obviamente, isso é ocasional e, em geral, não ocorre.
 
-Há, porém, dois outros tipos de "joins" disponíveis no R bastante úteis.
+# Combinação total de duas bases
 
-Se quisermos trabalhar apenas em uma única base de dados, por exemplo, pagamentos11, mas queremos saber quais das observações de 2011 também estão na tabela de 2017, então utilizamos a função _semi\_join_. O resultado será semelhante ao da aplicação de _inner\_join_, mas sem que novas colunas com os dados de 2017 tenham sido criadas:
+Finalmente, pode ser desejável incluir todos os casos de ambos data frames, não importando se existe correspondência na outra base. Em vez da interseção, trabalharíamos com a união de todos os casos. Fazemos a união com o verbo _full\_join_:
 
 ```{r}
-comb_semi <- semi_join(pagamentos11, pagamentos17, by = "nis")
+ticdom_full <- ticdom_ind %>%
+  full_join(ticdom_dom, by = 'id_domicilio')
 ```
 
-Por fim, _anti\_join_, tem comportamento semelhante a _semi\_join_, mas, em vez de retornar as observações de 2011 que têm correspondência em 2017, retorna as que nâo têm par em 2017:
-
-```{r}
-comb_anti <- anti_join(pagamentos11, pagamentos17, by = "nis")
-```
-
-É perfeitamente possível usar o operador %>% (pipe, como é chamado), para os "joins". Basta colocar a base na posição "x" (primeira a ser inserida) antes do operador. Veja um exemplo:
-
-```{r}
-comb_left <- pagamentos11 %>% left_join(pagamentos17, by = "nis")
-```
-
-## Exercício
-
-Respire fundo e gaste um tempo refletindo sobre os "joins". Você acabou de aprender como operar bancos de dados relacionais e pode parecer bastante difícil num primeiro momento.
-
-## Combinação de tabela e agregações cumulativas
-
-Vamos supor que queremos calcular os valores total, médio, máximo, etc, por município e, a seguir, apresentar esses valores como colunas para cada observação. Uma maneira eficiente de fazer isso é a usando a combinação de tabelas. Vamos er como voltando ao exemplo da amostra de saques do Programa Bolsa Família em 2017.
-
-## Exercício
-
-Abra a base de dados e faça as transformações necessárias (renomear variáveis e transformar a variável valor em numérica) antes de prosseguir. Tente fazê-lo sem olhar a resposta abaixo.
-
-## Resposta ao exercício anterior
-
-```{r}
-library(readr)
-saques_amostra_201701 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/saques_amostra_201701.csv", delim = ";", col_names = T)
-
-saques_amostra_201701 <- saques_amostra_201701 %>% 
-  rename(uf = UF, 
-         munic = `Nome Município`,
-         cod_munic = `Código SIAFI Município`, 
-         nome = `Nome Favorecido`,
-         valor = `Valor Parcela`, 
-         mes = `Mês Competência`, 
-         data_saque =`Data do Saque`) %>% 
-  select(uf, munic, cod_munic, nome, valor, mes, data_saque) %>% 
-  mutate(valor_num = as.numeric(gsub(",", "", valor)))
-```
-
-
-## Pasos para agregações cumulativas
-
-Em primeiro lugar, vamos construir uma tabela agrupada por município usando _group\_by_ e _summarise_:
-
-```{r}
-valores_munic <- saques_amostra_201701 %>% 
-  group_by(cod_munic) %>% 
-  summarise(contagem = n(),
-            soma = sum(valor_num),
-            media = mean(valor_num),
-            mediana = median(valor_num),
-            desvio = sd(valor_num),
-            minimo = min(valor_num),
-            maximo = max(valor_num))
-```
-
-Note que agora temos dois _data frames_, o original e "valores_munic", que pode ser combinados utilizando a variável "cod_munic". Usando _left\_join_ podemos levar as colunas da nova tabela à base de dados original:
-
-```{r}
-saques_amostra_201701 <- saques_amostra_201701 %>% 
-  left_join(valores_munic, by = "cod_munic")
-```
-
-Use _View_ para observar que a base de dados original tem agora 7 novas colunas com informações agregadas por município (e que, portanto, se repetem para observações de um mesmo município).
-
-# Exercício
-
-- Calcule o total de valores por UF em um novo _data frame_.
-- Combine o novo _data frame_ com o original para levar a coluna de total de valores ao último.
-- A seguir, calcule quanto cada indivíduo na amostra representa, em termor percentuais (dica: crie uma nova variável utilizando _mutate_).
+Novamente, não importa quais são os data frame à direita ou à esquerda. A união incluirá todos os casos completos da interseção e também os casos incompletos que apareceriam no _left\_join_ e no _right\_join_.
