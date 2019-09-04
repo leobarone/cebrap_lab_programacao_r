@@ -1,170 +1,213 @@
-# Voltando à TICDOM
+---
+title: "Manipulação de dados em R"
+author: "Leonardo Sangali Barone"
+date: "April 03, 2017"
+output: html_document
+---
 
-Agora que já temos em nosso repertório diversos verbos do _dplyr_, vamos ver como aplicar essa gramática com dados de survey, cujo desenho amostral deve ser considerado. Vamos começar carregando o pacote _tidyverse_
-
-```{r}
-library(tidyverse)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Voltaremos agora a trabalhar com a TICDOM. Deta vez, utilizaremos a base de indivíduos. Faremos a abertura dos dados diretamente da internet com a função _read\_csv2_, que abre arquivos de texto com colunas separadas por ponto e vírgula, como a TICDOM. Lembre-se de abrir o dicionário dos dados para acompanhar o tutorial, que você pode baixar [aqui](http://cetic.br/media/microdados/154/ticdom_2017_domicilios_dicionario_de_variaveis_v1.1.xlsx):
+# Bases de dados relacionais com a gramática do pacote dplyr
+
+Até agora, partimos de uma única base de dados e fizemos diversas transformações: mudamos de nomes de variáveis, computamos novas variáveis, selecionamos linhas e colunas, agrupamos e ordenamos. A partir de agora vamos aprender a combinar _data frames_ diferentes usando as funções do tipo __join__ do pacote _dplyr_. Vamos começar carregando o pacote:
 
 ```{r}
-ticdom_url <- "http://cetic.br/media/microdados/181/ticdom_2017_individuos_base_de_microdados_v1.3.csv"
-
-ticdom <- read_csv2(ticdom_url)
+library(dplyr)
 ```
 
-## Agrupando dados de survey desconsiderando o desenho amostral
+# Comparação dos pagamentos entre janeiro de 2011 e janeiro de 2017 no Programa Bolsa Família
 
-A partir do que aprendemos no tutorial sobre _group\_by_ e _summarise_, pareceria simples produzir tabelas com dados de survey. Vejamos dois exemplos. No prmeiro, vamos calcular a média de idade na amostra. A seguir, vamos calcular a média de idade por sexo:
+No lugar de uma amostra dos dados, como no tutorial anterior, utilizaremos no começo deste tutorial os dados de pagamento do Programa Bolsa Família em um município de pequeno porte: Borá, cidade do interior de São Paulo.
+
+Vamos começar importando os dados do mês de janeiro de cada um dos anos para o município de Borá, que foram extraídos dos dados baixados no Portal da Transparência.
+
+Se você estiver com tempo em sala de aula, faça como exercício a construção desses dados (em vez de baixá-los do repositório do curso). A recomendação é baixar os dados manualmente no Portal da Transparência, abrí-los com a função _fread_ do pacote _data.table_ e selecionar as linhas de Borá com a função _filter_ do pacote _dplyr_. Se não estiver com tempo, use o código abaixo.
 
 ```{r}
-ticdom %>%
-  summarise(media_idade = mean(IDADE))
+library(readr)
+pagamentos11 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/pagamentos11.csv", delim = ";", col_names = T)
+pagamentos17 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/pagamentos17.csv", delim = ";", col_names = T)
 ```
+
+Veja que os dados são semelhantes e têm a mesma estrutura. Esperamos, entretanto, que haja variação entre os anos e que os beneficiários e os valores pagos não sejam os mesmos, seja por que as pessoas entraram e saíram do programa ao longo do tempo, seja por que mudaram de município, seja por que os valores sofreram alteração em virtude de reajuste e mudanças na estrutura das famílias.
+
+Como descobrir tais mudanças? Como saber quem estava em 2011 e também em 2017? Como calcular a variação dos valores para cada beneficiário?
+
+## Exercício
+
+Examine as bases de dados "pagamentos11" e "pagamentos17" antes de começarmos a trabalhar com elas. Faça também as seguintes alterações:
+
+- Renomeie as variáveis "NIS Favorecido", "Nome Favorecido" e "Valor Parcela" para "nis", "nome" e "valor", repectivamente.
+- Transforme a variável valor em numérica.
+- Selecione apenas as três variáveis renomeadas.
+- Quantas linhas tem cada base de dados?
+
+## Resposta parcial ao exercício anterior (3 primeiros itens)
 
 ```{r}
-ticdom %>%
-  group_by(SEXO) %>% 
-  summarise(media_idade = mean(IDADE))
+# 2011
+pagamentos11 <- pagamentos11 %>% 
+  rename(nis = `NIS Favorecido`, nome = `Nome Favorecido`, valor = `Valor Parcela`) %>%
+  mutate(valor = gsub(",", "", valor), valor = as.numeric(valor)) %>%
+  select(nis, nome, valor)
+
+# 2017
+pagamentos17 <- pagamentos17 %>% 
+  rename(nis = `NIS Favorecido`, nome = `Nome Favorecido`, valor = `Valor Parcela`) %>%
+  mutate(valor = gsub(",", "", valor), valor = as.numeric(valor)) %>%
+  select(nis, nome, valor)
 ```
 
-A média e tabela parecem corretas. No entanto, o cálculo de médias desconsiderando o desenho amostral, seja para toda a amostra ou para cada um dos grupos, está incorreta. As observações têm pesos diferentes e percentem a estratos diferentes da amostra. Como corrigir esse problema e reescrever o código?
+## Left e Right Join
 
-## Survey em R: _survey_ vs _srvyr_
+Tendo as bases preparadas e sabendo que os beneficiários variam entre os anos, podemos começar a "juntá-las".
 
-A principal solução para dados de survey em R até a pouco tempo era o pacote _survey_. Você pode aprender sobre como trabalhar com dados da PNAD com o pacote _survey_ neste tutorial [aqui](https://github.com/leobarone/cebrap_lab_cetic_programacao_r/blob/master/tutorials/tutorial09.md)
+O elemento essencial dos "joins", ou seja, das combinações de bases de dados, é que haja uma variável que associe observações em uma base com observações em outras. Algumas variáveis costumam ser candidatas naturais para tal tarefa: CPF, NIS e Título de Eleitor, para indíduos e Código de município e UF para unidades político-administrativas. Mas, veremos adiante, podemos ser criativos e utilizar diversas outras "chaves" para conectar tabelas. O identificador que temos disponível em nossos dados é o NIS.
 
-O pacote _survey_, no entanto, traz uma restrição bastante importante: seu uso é imcompatível com a gramática do _dplyr_ que, além de ágil, é a mais popular em R. _survey_ traz um dialéto próprio e limita seu uso às funções que foram implementadas pelos desenvolvedores do pacote.
+"Letf join" e "right join" são os nomes dados às combinações que mantém todas as linhas de uma das bases de dados, mesmo sem haver correspondente na outra tabela, e inclui apenas os dados da segunda base que encontram correspondência na primeira tabela.
 
-Felizmente, surgiu recentemente um novo pacote que permite considerar o desenho amostral de um survey ao trabalhar com a gramática do _dplyr_: _srvyr_. Você pode ler um pouco sobre a comparação entre os dois pacotes nesta [vinheta](https://cran.r-project.org/web/packages/srvyr/vignettes/srvyr-vs-survey.html). Recomendo como complementação a este tutorial.
-
-Vamos instalar e carregar o pacote _srvyr_. antes de avançar:
+Vamos operar os dois "joins" e ver o que ocorre. Primeiro, "left join":
 
 ```{r}
-install.packages('srvyr')
-library(srvyr)
+comb_left <- left_join(pagamentos11, pagamentos17, by = "nis")
 ```
 
+Veja que informamos ao R que a variável que conecta as tabelas é "nis" informando o parâmetro "by".
 
-## Corrigindo o exemplo anterior com _srvyr_
+Quantas linhas resultaram da combinação? Exatamente o mesmo número de linhas de "pagamentos11". Use o _View_ para ver o resultado.
 
-Vamos corrigir os exemplos que produzimos acima (media de idade e media de idade por sexo) com o pacote _srvyr_ e examinar o código:
-
-Em primeiro lugar, a média de devices:
+Note que há duas variáveis de valor, uma com final ".x" e outra com o final ".y". Isso ocorre por que as duas bases tem os mesmos nomes de variáveis. ".x" significa que a variável veio da primeira tabela do "join" e ".y", da segunda. O mesmo ocorre com a variável "nome". Vamos aproveitar e renomeá-las:
 
 ```{r}
-ticdom %>%
-  as_survey_design(ids = UPA, strata = ESTRATO, weights = PESO) %>% 
-  summarise(media_IDADE = survey_mean(IDADE))
+comb_left <- comb_left %>% rename(valor11 = valor.x, nome11 = nome.x, 
+                                  valor17 = valor.y, nome17 = nome.y)
 ```
 
-E depois a tabela:
+Note que em diversas observações o valor e o nome para 2017 contém "NA", que é o símbolo do R para "missing values". O que isso significa? Significa que aquela observações existia em 2011, mas não em 2017. Ao não encontrar correspondência, o R manteve a observação, mas não inseriu nenhum valor.
+
+Se o número de linhas da combinação é o mesmo de 2011, onde estão as observações de 2017 que faltam? Não foram incluídas. O "left join" garante que todas as observações de 2011 sejam mantidas, mesmo sem correspondência, mas exclui todas as observações de 2017 que não encontrem par em 2011.
+
+Vamos deixar de lado rapidamente esta primeira combinação e realizar o "right join" das mesmas tabelas:
 
 ```{r}
-ticdom %>%
-  as_survey_design(ids = UPA, strata = ESTRATO, weights = PESO) %>% 
-  group_by(SEXO) %>% 
-  summarise(media_devices = survey_mean(IDADE))
+comb_right <- right_join(pagamentos11, pagamentos17, by = "nis")
 ```
 
-Veja que há duas mudanças em ambos os códigos. Em primeiro lugar, introduzimos uma nova linha antes do agrupamento. Utilizamos _as\_survey\_design_ para fazer justamente o que nos faltava: informar e considerar o desenho amostral antes de proceder com a produção de estatísticas descritivas.
-
-A segunda mudança está dentro de _summarise_. Não podemos mais utilizar a função _mean_ para produzir a média. Temos, agora, que utilizar as funções substitutas do pacote  _srvyr_ dentro do verbo _summarise_.
-
-Uma maneira mais econômica de trabalhar com os dados de survey sem repetir a linha que informa o desenho amostral é criar um novo objeto que contenha os dados + o desenho:
+Novamente, vamos renomear as variáveis:
 
 ```{r}
-ticdom_srvyr <- ticdom %>%
-  as_survey_design(ids = UPA, strata = ESTRATO, weights = PESO)
+comb_right <- comb_right %>% rename(valor11 = valor.x, nome11 = nome.x, 
+                                    valor17 = valor.y, nome17 = nome.y)
 ```
 
-Para facilitar a tarefa, convém transformar as variáveis que incluíremos nas margens da tabela como factor:
+Veja que agora há "missing values" nos valores e nomes de 2011. O "right join" preserva todas as observações de 2017, mesmo sem correspondência em 2011, e não inclui nenhum de 2011 que não encontre correspondência.
+
+Note que "left" e "right" são exatamente a mesma operação, mas com as tabelas em posição (x e y, 1a e 2a, etc) invertidas.
+
+## Inner e Full Join
+
+E se quisermos apenas as observações que estão, com certeza, em ambos os anos? Usamos o "inner join". Veja o resultado (já renomeado):
 
 ```{r}
-ticdom_srvyr <- ticdom_srvyr %>%
-  mutate(sexo_f = as.factor(SEXO),
-         raca_f = as.factor(RACA),
-         pea_f = as.factor(PEA))
+comb_inner <- inner_join(pagamentos11, pagamentos17, by = "nis")
+comb_inner <- comb_inner %>% rename(valor11 = valor.x, nome11 = nome.x, 
+                                    valor17 = valor.y, nome17 = nome.y)
 ```
 
+Agora, não há "missing values". Permanecem na combinação apenas os casos que estão presentes em ambas tabelas.
 
-A confecção de tabelas é, neste caso, simplificada. Veja alguns exemplos.
-
-Para obter as proporções de uma variável discreta em uma tabela, com seus respectivos desvios padrão, basta fazer:
+Finalmente, o "full join" adota o critério oposto: inclui todas as observações de ambos tabelas, não importando se há ou não correspondência, e insere "missing values" onde não há correspondência:
 
 ```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f) %>%
-  summarize(proporcao = survey_mean())
+comb_full <- full_join(pagamentos11, pagamentos17, by = "nis")
+comb_full <- comb_full %>% rename(valor11 = valor.x, nome11 = nome.x, 
+                                  valor17 = valor.y, nome17 = nome.y)
 ```
 
-Veja que não colocamos nada dentro da função _survey\_mean_, pois estamos apenas observando a variável 'de grupo'. O conteúdo das células diz respeito a esta variável e não a uma terceira, como fizemos há pouco e faremos a seguir.
+## Semi e anti joins
 
-Se o objetivo for obter a contagem de casos (com expansão da amostra) fazemos:
+Os quatro tipos de "join" apresentados anteriormente cobrem a totalidade de situações de combinação entre tabelas a partir de um "chave", ou seja, de um índice ou variável que permita estabelecer a relação entre elas.
+
+Há, porém, dois outros tipos de "joins" disponíveis no R bastante úteis.
+
+Se quisermos trabalhar apenas em uma única base de dados, por exemplo, pagamentos11, mas queremos saber quais das observações de 2011 também estão na tabela de 2017, então utilizamos a função _semi\_join_. O resultado será semelhante ao da aplicação de _inner\_join_, mas sem que novas colunas com os dados de 2017 tenham sido criadas:
 
 ```{r}
-ticdom_srvyr %>%  group_by(SEXO) %>%
-
-  group_by(sexo_f) %>%
-  summarize(contagem = survey_total())
+comb_semi <- semi_join(pagamentos11, pagamentos17, by = "nis")
 ```
 
-Seja com _survey\_mean_ ou _survey\_total_, é possível alterar o resultado da função, que por default traz o desvio padrão, para intervalo de confiança de 95% com o argumento 'vartype':
+Por fim, _anti\_join_, tem comportamento semelhante a _semi\_join_, mas, em vez de retornar as observações de 2011 que têm correspondência em 2017, retorna as que nâo têm par em 2017:
 
 ```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f) %>%
-  summarize(proporcao = survey_mean(vartype = "ci"))
+comb_anti <- anti_join(pagamentos11, pagamentos17, by = "nis")
 ```
 
-O procedimento para 2 ou mais variáveis é semelhante. Basta adicionar as demais variáveis ao agrupamento.
+É perfeitamente possível usar o operador %>% (pipe, como é chamado), para os "joins". Basta colocar a base na posição "x" (primeira a ser inserida) antes do operador. Veja um exemplo:
 
 ```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f, raca_f) %>%
-  summarize(proporcao = survey_mean())
+comb_left <- pagamentos11 %>% left_join(pagamentos17, by = "nis")
 ```
 
-Com 3 variáveis:
+## Exercício
+
+Respire fundo e gaste um tempo refletindo sobre os "joins". Você acabou de aprender como operar bancos de dados relacionais e pode parecer bastante difícil num primeiro momento.
+
+## Combinação de tabela e agregações cumulativas
+
+Vamos supor que queremos calcular os valores total, médio, máximo, etc, por município e, a seguir, apresentar esses valores como colunas para cada observação. Uma maneira eficiente de fazer isso é a usando a combinação de tabelas. Vamos er como voltando ao exemplo da amostra de saques do Programa Bolsa Família em 2017.
+
+## Exercício
+
+Abra a base de dados e faça as transformações necessárias (renomear variáveis e transformar a variável valor em numérica) antes de prosseguir. Tente fazê-lo sem olhar a resposta abaixo.
+
+## Resposta ao exercício anterior
 
 ```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f, raca_f, pea_f) %>%
-  summarize(proporcao = survey_mean())
+library(readr)
+saques_amostra_201701 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/saques_amostra_201701.csv", delim = ";", col_names = T)
+
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  rename(uf = UF, 
+         munic = `Nome Município`,
+         cod_munic = `Código SIAFI Município`, 
+         nome = `Nome Favorecido`,
+         valor = `Valor Parcela`, 
+         mes = `Mês Competência`, 
+         data_saque =`Data do Saque`) %>% 
+  select(uf, munic, cod_munic, nome, valor, mes, data_saque) %>% 
+  mutate(valor_num = as.numeric(gsub(",", "", valor)))
 ```
 
-Lembrando que com _spread_ podemos tornar a tabela de agrupamento por 2 variáveis em uma tabela de duas entradas. Para retirar o desvio padrão da proporção investigada, convém adicionar o verbo _select_ com o nome do desvio padrão precedido pelo sinal negativo:
+
+## Pasos para agregações cumulativas
+
+Em primeiro lugar, vamos construir uma tabela agrupada por município usando _group\_by_ e _summarise_:
 
 ```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f, raca_f) %>%
-  summarize(proporcao = survey_mean()) %>%
-  select(-proporcao_se) %>% 
-  spread(sexo_f, proporcao)
+valores_munic <- saques_amostra_201701 %>% 
+  group_by(cod_munic) %>% 
+  summarise(contagem = n(),
+            soma = sum(valor_num),
+            media = mean(valor_num),
+            mediana = median(valor_num),
+            desvio = sd(valor_num),
+            minimo = min(valor_num),
+            maximo = max(valor_num))
 ```
 
-Podemos, como já fizemos acima, fazer com que o conteúdo sumarizado não seja apenas a proporção em cada respota da variável de agrupamento, mas uma estatística descritiva de uma terceira variável.  Além disso, ademais de _survey\_mean_ e _survey\_total_, podemos utilizar outras função sumário do pacote _srvyr_: _survey\_mediam_, _survey\_quantile_.
+Note que agora temos dois _data frames_, o original e "valores_munic", que pode ser combinados utilizando a variável "cod_munic". Usando _left\_join_ podemos levar as colunas da nova tabela à base de dados original:
 
 ```{r}
-ticdom_srvyr %>%  
-  group_by(sexo_f) %>% 
-  summarise(media = survey_mean(IDADE),
-            soma = survey_total(IDADE),
-            quantil_25 = survey_quantile(IDADE, quantiles = 0.25),
-            quantil_75 = survey_quantile(IDADE, quantiles =  0.75))
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  left_join(valores_munic, by = "cod_munic")
 ```
 
-As tabelas de duas entradas (gerada por agrupamentos de duas variáveis) podem também ter como conteúdo de célula uma terceira variável:
+Use _View_ para observar que a base de dados original tem agora 7 novas colunas com informações agregadas por município (e que, portanto, se repetem para observações de um mesmo município).
 
-```{r}
-ticdom_srvyr %>%
-  group_by(sexo_f, raca_f) %>% 
-  summarise(media = survey_mean(IDADE)) %>%
-  select(-media_se) %>% 
-  spread(sexo_f, media)
-```
+# Exercício
 
-## Para onde vamos
-
-Podemos parar por aqui. Mas já temos o suficiente para reprduzir inúmeras tabelas de resultados geradas a partir de surveys.
+- Calcule o total de valores por UF em um novo _data frame_.
+- Combine o novo _data frame_ com o original para levar a coluna de total de valores ao último.
+- A seguir, calcule quanto cada indivíduo na amostra representa, em termor percentuais (dica: crie uma nova variável utilizando _mutate_).

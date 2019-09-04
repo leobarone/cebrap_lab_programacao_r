@@ -1,258 +1,423 @@
-# Manipulação de dados com a gramática do Tidyverse
+# Manipulação de dados com a gramática básica do R
 
-Um dos aspectos mais incríveis da linguagem R é o desenvolvimento de novas funcionalidades pela comunidade de usuários. Algumas das melhores soluções desenvolvidas são relacionadas à "gramática para bases de dados", ou seja, à maneira como importamos, organizamos, manipulamos e extraímos informações das bases de dados.
+A esta altura do campeonato, você já tem bastante recursos para programar em R. Combinando seu conhecimento sobre vetores, _data frames_, tipos de dados, loops, condicionais e funções dá para fazer um bocado de coisas legais. Depois deste tutorial, voltaremos a estes tópicos para exercitar o que aprendemos.
 
-Neste tutorial vamos nos concentrar na "gramática" mais popular: o pacote _dplyr_, parte do _tidyverse_. Veremos, por enquanto, apenas 3 operações:
+Falta, porém, algo essencial e muito próprio da linguagem R: como manipular variáveis e observações em um _data frame_. Boa parte da tarefa de organização de dados para a pesquisa se resume ao que faremos neste tópico. Este é o uso da lingaugem R que se aproxima do uso de outras ferramantas como SPSS, Stata e SAS.
 
-Há várias maneiras de se trabalhar com bases de dados em R e a "gramática" do _dplyr_ é a mais popular e, ao meu ver, simples. Há, inclusive, uma forma de se trabalhar com conjuntos de dados mais, digamos, antiga, que é a "gramática" original da linguagem, que chamaremos de "base" ou "básico". Podemos pensar na linguagem R como uma língua com diversos dialétos. Os dois dialétos "dominantes" para manipulação de dados são o "base" e o do pacote _dplyr_.
+No tutorial anterior, sobre abertura de dados, mencionei que há "gramáticas" diferentes para a manipulação de dados em R. Nosso objetivo é aprender bem a "gramática" do _tidyverse_ (que por si só seria suficiente) e vamos ignorar a do pacote _data.table_ (por pura economia de tempo, pois ela pode ser bastante útil).
 
-O pacote _dplyr_ é parte do _tidyverse_, que é tanto um pacote "guarda-chuva" em R (ou seja, que carrega diversos outros pacotes) e um "movimento" de reescrever a linguagem. Antes de começar, vamos carregar o pacote _tidyverse_ que, dentre outros, carrega o _dplyr_.
+A "gramática" básica do R é pouco elegante e essa é uma das barreiras ao aprendizado da linguagem. Ela é bem mais confusa e "verbosa" (ou seja, tem que escrever muito para realizar pouco) do que as dos demais softwares de análise de dados e do _tidyverse_. Mas sem conhecer como funciona a "gramática" básica da linguagem R, nossa capacidade de aprender mais no futuro ficaria bastante limitada. Lembre-se que aprenderemos num futuro breve formas equivalentes de fazermos as mesmas coisas.
 
-```{r}
-library(tidyverse)
-```
+## Variáveis e data frames
 
-Além do _dplyr_, vamos utilizar também um novo pacote, _readr_, que é o pacote do _tidyverse_ para abertura de dados, como você pode ver no tutorial 4. Note que as funções do _readr_ são bastante parecidas com as funções de abertura de dados do "base", sendo que as funções do primeiro são grafados com "\_" (por exemplo, _read\_csv_ para abrir arquivos .csv) e as do segundo com "." (como em read.csv). As funções do pacote _readr_ são, no geral, mais rápidas e contém por padrão alguns parâmetros desejáveis (por exemplo, carregar variáveis de texto como "character" e não como "factor").
+Para esta atividade, vamos trabalhar com um banco de dados falso que criei ("fake" -- está em inglês, pois é reciclagem de outro curso que lecionei).
 
-## Tibbles e data frames
-
-A partir deste tutorial vamos trabalhar com as bases de dados do CETIC. Em particular, vamos começar trabalhando com a TICDOM. Faremos a abertura dos dados diretamente da internet com a função _read\_csv2_, que abre arquivos de texto com colunas separadas por ponto e vírgula, como a TICDOM. Lembre-se de abrir o dicionário dos dados para acompanhar o tutorial, que você pode baixar [aqui](http://cetic.br/media/microdados/154/ticdom_2017_domicilios_dicionario_de_variaveis_v1.1.xlsx).
-
-Para abrir um arquivo diretamente da internet vamos guardar o url em um objeto de texto e utilizá-lo na função de abertura de dados como input:
+Vamos nos adaptar a abrir dados com funções dos pacotes _readr_, _data.table_ e _haven_. Para este exercício, podemos usar _read\_delim_:
 
 ```{r}
-ticdom_url <- "http://cetic.br/media/microdados/153/ticdom_2017_domicilios_base_de_microdados_v1.1.csv"
-
-ticdom <- read_csv2(ticdom_url)
+library(readr)
+url_fake_data <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/fake_data.csv"
+fake <- read_delim(url_fake_data, delim = ";", col_names = T)
 ```
-As funções do pacote _readr_ abrem um tipo especial de _data.frame_ - um _tibble_. Tibbles são como data\_frames, mas contêm algumas características adicionais. Se executarmos apenas o nome do _tibble_, obteremos um resumo dos dados útil e fácil de ler. Note que, ao contrário de um _data.frame_ que imprime centenas de linhas e preenche nossa tela, um _tibble_ se limita às primeiras dez linhas:
+
+A descrição das variáveis do banco de dados está abaixo:
+
+"Fakeland is a very stable democracy that helds presidential elections every 4 years. We are going to work with the fake dataset of Fakeland individual citizens that contains information about their basic fake characteristics and fake political opinions/positions. The variables that our fake dataset are:
+
+- _age_: age
+- _sex_: sex
+- _educ_: educational level
+- _income_: montly income measured in fake money (FM\$)
+- _savings_: total fake money (FM\$) in savings account
+- _marrige_: marriage status (yes = married)
+- _kids_: number of children
+- _party_: party affiliation
+- _turnout_: intention to vote in the next election
+- _vote\_history_: numbers of presidential elections that turned out since 2002 elections
+- _economy_: opinion about the national economy performance
+- _incumbent_: opinion about the incumbent president performance
+- _candidate_: candidate of preference"
+
+## Exercício
+
+Utilize as funções que você já conhece -- _head_, _dim_, _names_, _str_, etc -- para conhecer os dados. Quantas linhas há no _data frame_? Quantas colunas? Como estão armazenadas cada variável (tipo de dados e classe dos vetores colunas)?
+
+## Data frame como conjunto de vetores
+
+No primeiro tutorial construímos um _data frame_ a partir de vetores de mesmo tamanho e "pareados", ou seja, com as posições das informações representando cada observação. Para trabalhar com variáveis do _data frame_ como vetores usamos o símbolo "$" separando o nome do _data frame_ da variável. Por exemplo, escrevemos fake\$age para indicar a variável "age" no _data frame_ "fake":
 
 ```{r}
-ticdom
+print(fake$age)
 ```
 
-## Introdução ao pacote dplyr
-
-## Renomeando variáveis
-
-Com certa frequência, obtemos dados cujos nomes das colunas são compostos, contêm acentuação, cecedilha e demais caracteres especiais. Dá um tremendo trabalho usar nomes com tais característica. O ideal é termos nomes sem espaço (você pode usar ponto ou subscrito para separar palavras em um nome composto) e que contenham preferencialmente letras minísculas sem acento e números. Vamos começar renomeando algumas variáveis no nosso banco de dados, cujos nomes vemos com o comando abaixo:
+Podemos fazer uma cópia do vetor "age" que não seja variável "fake"? Sim:
 
 ```{r}
-names(ticdom)
+idade <- fake$age
+print(idade)
 ```
 
-O primeiro argumento da função _rename_ deve ser a base de dados cujos nomes das variáveis serão renomeados. Depois da primeira vírgula, inserimos todos as modificações de nomes, novamente separadas por vírgulas, e da seguinte maneira. Exemplo: nome\_novo = nome\_velho. Exemplo: nome\_novo = Nome_Velho. Veja o exemplo, em que damos novos nomes às variáveis "A1_B" e "a2_qtd_note", respectivamte se há algum notebook no domicílio e quantos há. 
+Porque não podemos simplesmente usar "age" e precisamos colocar o nome do _data frame_ seguido de "$" para indicar o vetor do conjunto de dados? Por que podemos ter mais de um _data frame_ no mesmo __workspace__ com uma variável de nome "age". Pense no _data frame_ + nome da variável como um endereço composto da variável no seu workspace que evita ambiguidade. Para quem está aconstumad@ a trabalhar com SPSS, Stata ou SAS, ter que indicar qual é o _data frame_ ao qual a variável pertence parece estranho, mas faz todo sentido para o R.
+
+Outros exemplos simples de como usar variáveis de um _data frame_ em outras funções (algumas das quais veremos no futuro, mas você já pode ir se acostumando à linguagem).
+
+Gráfico de distribuição de uma variável contínua:
 
 ```{r}
-ticdom <- rename(ticdom, notebook = A1_B, notebook_n = a2_qtd_note)
+plot(density(fake$age), main = "Distribuição de Idade", xlab = "Idade")
+
 ```
 
-O 'verbo' rename, da gramática do _dplyr_ é bastante mais simples do que usar do que o método anterior para renomear variáveis em um _data frame_.
-
-## Uma gramática, duas formas
-
-No _tidyverse_, existe uma outra sintaxe para executar a mesma tarefa de renomeação. Vamos olhar para ela (lembre-se de carregar novamente os dados, pois os nomes velhos já não existem mais):
-
-```{r, eval = F}
-ticdom <- read_csv2(ticdom_url)
-ticdom <- ticdom %>%
-  rename(notebook = A1_B,
-         notebook_n = a2_qtd_note)
-```
-
-Usando o operador %>%, denominado _pipe_, retiramos de dentro da função _rename_ o banco de dados cujas variáveis serão renomeadas. As quebras de linha depois do %>% e dentro da função _rename_ são opcionais. Porém, o pardão é 'vertucalizar o código' e colcar os 'verbos' à esquerda, o que torna sua leitura mais confortável.
-
-Compare com o código que havíamos executado anteriormente:
-
-```{r, eval = F}
-ticdom <- read_csv2(ticdom_url)
-ticdom <- rename(ticdom, notebook = A1_B, notebook_n = a2_qtd_note)
-```
-
-Essa outra sintaxe tem uma vantagem grande sobre a anterior: ela permite emendar uma operação de transformação do banco de dados na outra. Veremos adiante como fazer isso. Por enquanto, tenha em mente que o resultado é o mesmo para qualquer uma das duas formas.
-
-
-Vamos trabalhar com várias variáveis (sic) de uma única vez. Reabra o banco de dados:
-
-```{r, include = F, echo=F}
-ticdom <- read_csv2(ticdom_url)
-```
-
-Renomeie as variáveis "RENDA_FAMILIAR", "a2_qtd_note", "a2_qtd_desk", "a2_qtd_tab", "A4", "A5", "A9", "ESTRATO", "PESO" e "UPA".
-
-```{r, include = F, echo=F}
-ticdom <- ticdom %>% 
-  rename(renda  = RENDA_FAMILIAR,
-         notebook_n = a2_qtd_note,
-         desktop_n = a2_qtd_desk,
-         tablet_n = a2_qtd_tab,
-         internet = A4,
-         tipo_conexao = A7,
-         preco_internet = A9,
-         estrato = ESTRATO,
-         peso = PESO,
-         upa = UPA)
-```
-
-## Selecionando colunas
-
-Algumas colunas podem ser dispensáveis em nosso banco de dados a depender da análise. Por exemplo, pode ser que nos interessem apenas as variáveis que já renomeamos. Para selecionar um conjunto de variáveis, utilizaremos o segundo verbo do _dplyr_ que aprenderemos: _select_
+Gráfico de dispersão de duas variáveis contínuas:
 
 ```{r}
-ticdom <- select(ticdom,
-                 renda,
-                 notebook_n,
-                 desktop_n,
-                 tablet_n,
-                 internet,
-                 tipo_conexao,
-                 preco_internet,
-                 estrato,
-                 peso,
-                 upa)
+plot(fake$age, fake$savings, main = "Idade x Poupança", xlab = "Idade", ylab = "Poupança")
 ```
 
-ou usando o operador %>%, chamado __pipe__,
+Tabela de uma variável categórica (contagem):
 
 ```{r}
-ticdom <- ticdom %>% 
-  select(renda,
-         notebook_n,
-         desktop_n,
-         tablet_n,
-         internet,
-         tipo_conexao,
-         preco_internet,
-         estrato,
-         peso,
-         upa)
+table(fake$party)
 ```
 
-## Operador %>% para "emendar" tarefas
-
-O que o operador __pipe__ faz é simplesmente colocar o primeiro argumento da função (no caso acima, o _data frame_), fora e antes da própria função. Ele permite lermos o código, informalmente, da seguinte maneira: "pegue o data frame x e aplique a ele esta função". Veremos abaixo que podemos fazer uma cadeia de operações ("pipeline"), que pode ser lida informalmente como: "pegue o data frame x e aplique a ele esta função, e depois essa, e depois essa outra, etc".
-
-A grande vantagem de trabalharmos com o operador %>% é não precisar repetir o nome do _data frame_ diversas vezes ao aplicarmos a ele um conjunto de operações.
-
-Vejamos agora como usamos o operador %>% para "emendar" tarefas, começando da abertura desde dados. Note que o primeiro input é o url da base de dados e, que, uma vez carregados, vai sendo transformado a cada novo verbo.
+Tabela de duas entradas para duas variávels categóricas (contagem):
 
 ```{r}
-ticdom <- ticdom_url %>% 
-  read_csv2() %>% 
-  rename(renda  = RENDA_FAMILIAR,
-         notebook_n = a2_qtd_note,
-         desktop_n = a2_qtd_desk,
-         tablet_n = a2_qtd_tab,
-         internet = A4,
-         tipo_conexao = A7,
-         preco_internet = A9,
-         estrato = ESTRATO,
-         peso = PESO,
-         upa = UPA) %>% 
-  select(renda,
-         notebook_n,
-         desktop_n,
-         tablet_n,
-         internet,
-         tipo_conexao,
-         preco_internet,
-         estrato,
-         peso,
-         upa)
+table(fake$party, fake$candidate)
 ```
 
-Em uma única sequência de operações, abrimos os dados, alteramos os nomes das variáveis e selecionamos as que permaneceriam no banco de dados. Esta forma de programa, tenha certeza, é bastante mais econômica e mais fácil de ler, para que possamos identificar erros mais facilmente.
+No começo pode parecer um pouco irritante usar o "endereço" completo da variável, mas você logo se acostuma.
 
-## Transformando variáveis
+## Dimensões em um data frame
 
-Usaremos a função _mutate_ para operar transformações nas variáveis existentes e criar variáveis novas. Há inúmeras transformações possíveis e elas lembram bastante as funções de outros softwares, como MS Excel. Vamos ver algumas das mais importantes.
+Tal como uma matriz, um _data frame_ tem duas dimensões: linha e coluna. Se queremos selecionar elementos de um _data frame_, podemos usar colchetes separados por uma vírgula e inserir antes da vírgula uma seleção de linhas e depois da vírgula uma seleção de colunas -- [linhas, colunas]. Vejamos alguns exemplos de seleção de linhas:
 
-Por exemplo, diversas variáveis na TICDOM, como as referentes às perguntas sobre quantidade de computadores e tables, têm os valores 999999999 para indicar que a pergunta não se aplica. Podemos transformar esses valores em 0, fazendo sua substituição:
+Quinta linha fazemos:
 
 ```{r}
-ticdom <- ticdom %>%
-  mutate(notebook_n = replace(notebook_n, notebook_n == 999999999, 0),
-         desktop_n = replace(desktop_n, desktop_n == 999999999, 0),
-         tablet_n = replace(tablet_n, tablet_n == 999999999, 0))
+fake[5, ]
 ```
 
-
-Como utilizamos os nomes das próprias variáveis à esquerda da operação de transformação, produziremos uma substituição e não haverá novas colunas na base de dados.
-
-Vamos agora aproveitar que temos as variáveis transformadas e criar uma nova, que representa a soma de todos os computadores e tablets de cada domicílio. Vamos dar a ela o nome 'devices\_qtd' e, por utilizarmos um nome novo de variável, haverá uma nova coluna à direita dos dados.
+Quinta e a oitava linhas:
 
 ```{r}
-ticdom <- ticdom %>%
-  mutate(devices_n = notebook_n + desktop_n + tablet_n)
+fake[c(5,8), ]
 ```
 
-Use o comando View para visualizar o resultado da coluna criada à direita do banco de dados. Simples, não? Basta inserimos dentro do 'verbo' _mutate_ a expressão da transformação que queremos, que, no caso, é uma soma de 3 outras variáveis.
-
-Podemos examinar o resultado com a tabela:
+As linhas 4 a 10:
 
 ```{r}
-table(ticdom$devices_n)
+fake[4:10,]
 ```
 
-Vamos supor, agora, que nos interessa que essa variável seja transformada em faixas arbitrárias: "0 devices", "1 a 2 devices" e "3 a 5 devices" e "6 ou mais devices". Produziremos uma nova variável, "devices_faixa", e utilizaremos a função "cut" para transformar a variável "devices_n":
+Agora alguns exemplos de colunas. Segunda coluna:
 
 ```{r}
-ticdom <- ticdom %>% 
-  mutate(devices_faixa = cut(devices_n,
-                             c(-Inf, 0, 2, 5, Inf),
-                             c("0", "1 a 2", "3 a 5", "6 ou mais")))
+fake[, 2]
 ```
 
-Os valores "-Inf" e "Inf" representa infinitos negativo e positivo, respectivamente, e servem para não delimitar as pontas das faixas onde produziremos os cortes. Os cortes centrais são dados em 0, 2 e 5. Podemos examinar o resultado com a tabela cruzada:
+Note que o resultado é semelhante ao de:
 
 ```{r}
-table(ticdom$devices_n, ticdom$devices_faixa)
+fake$sex
 ```
 
-## Filtrando linhas
+No entanto, no primeiro caso estamos produzindo um _data frame_ de uma única coluna, enquanto no segundo estamos produzinho um vetor. Exceto pela classe, são idênticos.
 
-Por vezes, queremos trabalhar apenas com um conjunto de linhas do nosso banco de dados. Por exemplo, se quisermos selecionar apenas os respondentes com renda familiar "De R$ 1.874,01 até R$ 2.811,00" (valor 3 na variável renda), utilizamos o verbo 'filter' com a condição desejada. Note que estamos criando um novo data frame que contém a seleção de linhas produzida:
+Segunda e sétima colunas:
 
 ```{r}
-ticdom_renda3 <- ticdom %>% 
-  filter(renda == 3)
+fake[, c(2,7)]
 ```
 
-Além da igualdade, poderíamos usar outros símbolos: maior (>). maior ou igual (>=), menor (<), menor ou igual (<=) e diferente (!=) para selecionar casos. Para casos de _NA_, podemos usar a função is.na(), pois a igualdade '== NA' é inválida em R. Vamos supor agora que queremos todos os respondentes com renda até R$ 2.811,00 (valores 1, 2 e 3 na variável renda) e também os que não têm renda (valor 9):
+Três primeiras colunas:
 
 ```{r}
-ticdom_baixa <- ticdom %>% 
-  filter(renda <= 3 | renda == 9)
+fake[, 1:3]
 ```
 
-Note que, para dizer que para combinarmos as condições de seleção de linha, utilizamos uma barra vertical. A barra é o símbolo "ou", e indica que todas as observações que atenderem a uma ou outra condição serão incluídas.
+## Exercício
 
-Vamos supor que queremos estabelecer agora condições para a seleção de linhas a partir de duas variáveis. Por exemplo, queremos incluir as mesmas faixas de renda já escolhidas  e que também tenham internet em casa. O símbolo da conjunção "e" é "&". Veja como utilizá-lo:
+Qual é a idade do 17o. indivíduo? Qual é o candidato de preferência do 25o. indivíduo?
+
+## Seleção de colunas com nomes das variáveis
+
+Neste _data frame_ as linhas não têm nomes (mas poderiam ter). As colunas, no entanto, sempre têm. A regra é trabalharmos com muito mais linhas do que colunas e por esta razão os nomes das colunas costumam ser mais úteis do que os das linhas. Podemos usar os nomes das colunas no lugar de suas posições para selecioná-las.
 
 ```{r}
-ticdom_baixa <- ticdom %>% 
-  filter(renda <= 3 | renda == 9 & internet == 1)
+fake[, c("age", "income", "party")]
 ```
 
-Ao usar duas variáveis diferentes para filter e a conjunção "e", podemos escrever o comando separando as condições por vírgula e dispensar o operador "&":
+Mas o código seguinte não é válido, pois o operador ":" serve somente para gerar sequências de números inteiros.
+
+```{r, error = T}
+fake[, "age":"sex"]
+```
+
+Vamos super que acabamos de abrir os resultados eleitorais do Rio Grande do Sul nas eleições de 2016 retirados do Repositório de Dados Eleitorais do TSE (exatamente como faremos na atividade que segue este tutorial). Há um número grande de colunas desnecessárias a análise dos resultados (por exemplo, o ano da eleição, a hora da extração dos dados, etc). Para liberar memória do computador e trabalhar com um _data frame_ menor, fazemos uma seleção de colunas exatamente como acima, seja usando sua posição ou seu nome e geramos um _data frame_ novo (ou sobrescrevemos o atual). Veja um exemplo com "fake":
 
 ```{r}
-ticdom_baixa <- ticdom %>% 
-  filter(renda <= 3 | renda == 9,
-         internet == 1)
+new_fake <- fake[, c("age", "income", "party", "candidate")]
 ```
 
-Você pode combinar quantas condições precisar. Se houver ambiguidade quanto à ordem das condições, use parênteses das mesma forma que usamos com operações aritméticas.
 
-# Exercício
+E se quiseremos todas as colunas menos "turnout" e "vote_history"? Podemos usar a função _setdiff_, que gera a diferença entre dois vetores, por exemplo, o vetor com todos os nomes de colunas (gerado com a função _names_) e o vetor com as colunas que desejamos excluir. Vamos guardar o resultado em "new\_fake2"
 
-Para treinar o que acabamos de ver, abra novamente os dados e produza as seguintes transformações nos dados:
+```{r}
+selecao_colunas <- setdiff(names(fake), c("turnout", "vote_history"))
+print(selecao_colunas)
+new_fake2 <- fake[,selecao_colunas]
+```
 
-1 - renomeie as variáveis "AREA" e "A4" com o verbo _rename_;
+## Selecionando linhas com o operadores relacionais
 
-2 - com o verbo _select_, mantenha na base de dados apenas as duas variáveis renomeadas;
+No item acima fizemos uma seleção de colunas nos dados usando os nomes das colunas. Bancos de dados com muitas colunas, como os Censos Populacional e Escolar, ou o Latinobarômetro, não são tão comuns e raramente o número de colunas ultrapassa as poucas centenas.
 
-3 - com o verbo _mutate_, modifique a variável A4 para transformar os valores 97 ('Não sabe') e 98 ('Não respondeu') em NA (que é o símbolo de missing values em R). Você precisará usar a função _replace_ dentro do verbo _mutate_.
+O que fazer, então, com linhas, que são normalmente muito mais numerosas, as vezes na casa dos milhões? Precisamos utilizar operadores relacionais. Vamos fazer isso dando passos curtos para entendermos todo o processo.
 
-4 - selecine, com _filter_, apenas os respondentes de área rural.
+Vamos supor que queremos selecionar apenas os indivíduos que pretendem votar na próxima eleição (variável "turnout"). Podemos gerar um vetor lógico que represente essa seleção:
 
+```{r}
+fake$turnout == "Yes"
+```
+
+Vamos guardar esse vetor lógico em um objeto denominado "selecao\_linhas"
+
+```{r}
+selecao_linhas <- fake$turnout == "Yes"
+print(selecao_linhas)
+```
+
+Agora, podemos inserir esse vetor lógico na posição das linhas dentro dos colchetes para gerar um novo conjunto de dados que atenda à condição (intenção de votar):
+
+```{r}
+fake_will_vote <- fake[selecao_linhas, ]
+```
+
+Basicamente, para fazermos uma seleção podemos usar a posição das linhas (ou das colunas), seus nomes ou um vetor lógico do mesmo tamanho das linhas (ou colunas). Sequer precisamos fazer o passo a passo acima. Veja um exemplo que gera um _data frame_ de indivíduos que se identificam como "Independent":
+
+```{r}
+fake_independents <- fake[fake$party == "Independent", ]
+```
+
+Podemos, obviamente, combinar condições e usar os operador lógicos ("ou", "e" e "não") para fazer seleções mais complexas:
+
+```{r}
+fake_married_no_college_yong <- fake[fake$marriage == "Yes" & 
+                                       fake$age <= 30 & 
+                                       !(fake$educ == "College Degree or more"), ]
+```
+
+## Exercício
+
+Produza um novo _data frame_ com apenas 4 variáveis -- "age", "income", "economy" e "candidate" -- e que contenha apenas eleitores homens, ricos ("income" maior que FM\$ 3 mil, que é dinheiro pra caramba em Fakeland) e inclinados a votar no candidato "Trampi".
+
+Quais as dimensões do novo _data frame_? Qual é a idade média dos eleitores no novo _data frame_? Qual é a soma da renda no novo _data frame_?
+
+## Função subset
+
+Uma maneira alternativa de fazer a seleção de linhas é usar a função _subset_. Veja como (repetindo o exemplo de indivíduos identificados como "independentes"):
+
+```{r}
+fake_independents <- subset(fake, party == "Independent")
+```
+
+O resultado é o mesmo e você pode achar essa maneira mais elegante. Veremos, no futuro, outra ainda mais simples com o pacote _dplyr_.
+
+## Criando uma nova coluna
+
+Criar uma nova coluna em um _data frame_ é trivial. Por exemplo, vamos criar a coluna "vazia", onde colocaremos apenas "missing values", que são representados no R por "NA"
+
+```{r}
+fake$vazia <- NA
+```
+
+Podemos criar uma coluna a partir de outra(s). Por exemplo, vamos criar duas novas colunas, "poupança", que será igual a coluna "savings" mas em real (cotação de um FM\$ -- fake money -- é R\$ 17) e a coluna "savings\_year", que será a divisão de "savings" por anos do indíviduo a partir dos 18.
+
+```{r}
+fake$poupanca <- fake$savings / 17
+fake$savings_year <- fake$savings / (fake$age - 18)
+```
+
+Você pode fazer qualquer operação com vetores que vimos em tutoriais anteriores para criar novas variáveis. A única imposição é que os vetores tenham sempre o mesmo tamanho, o que não é um problema em um _data frame_.
+
+Se quiser substituir o conteúdo de uma variável em vez de gerar uma nova, o procedimento é o mesmo. Basta atribuir o resultado da operação entre vetores à variável existente, tal qual no exemplo, que transforma "age" em uma variável medida em meses:
+
+```{r}
+fake$age <- fake$age  * 12
+```
+
+
+Vamos ver agora como substituir valores em uma variável para depois aprendermos a recodificarmos variáveis.
+
+## Substituindo valores em um variável
+
+Vamos "traduzir" para o português a variável "party". Faremos isso alterando cada uma das categorias individualmente e, por enquanto, sem usar nenhuma função que auxilie a substituição de valores. Começemos com uma tabela simples da variável "party"
+
+```{r}
+table(fake$party)
+```
+
+Agora, observe o resultado do código abaixo:
+
+```{r}
+fake$party[fake$party == "Independent"]
+```
+
+Fizemos um subconjunto de apenas uma variável do _data frame_, e não do _data frame_ todo. Note a ausência da vírgula dentro do colchetes, pois  Se atribuirmos algo a essa selação, por exemplo, o texto "Independentes", substituiremos os valores da seleção:
+
+```{r}
+fake$party[fake$party == "Independent"] <- "Independente"
+```
+
+Importante: a seleção do vetor (colchetes) está à direita do símbolo de atribuição.
+
+Observe o resultado na tabela:
+
+```{r}
+table(fake$party)
+```
+
+## Exercício
+
+Traduza para o português as demais categorias da variável "party".
+
+## Substituição com o comando replace
+
+O procedimento de substituir valores em uma mesma variável pode ser alternativamente realizado com a função _replace_. Vamos traduzir para o português a variável "sex"
+
+```{r}
+fake$sex <- replace(fake$sex, fake$sex == "Female", "Mulher")
+fake$sex <- replace(fake$sex, fake$sex == "Male", "Homem")
+table(fake$sex)
+```
+
+## Recodificando uma variável
+
+Vamos supor que não nos interessa trabalhar com renda ("income") como variável contínua. Vamos transformá-la na variável "rich", que receberá valor "rich" se a renda for maior que FM\$ 3 mil e "not rich" caso contrário. Seguiremos o seguinte procedimento: criaremos uma variável com "missing values"; substituiremos os valores para os indivíduos ricos; e depois substituiremos os valores para os não-ricos. Note que a seleção da variável "rich" para a substituição de valores é feita utilizando a variável "income":
+
+```{r}
+fake$rich <- NA
+fake$rich[fake$income > 3000] <- "rich"
+fake$rich[fake$income <= 3000] <- "not rich"
+table(fake$rich)
+```
+
+## Exercício
+
+Utilize o que você aprendeu sobre transformações de variáveis neste tutorial e o sobre fatores ("factors") no tutorial 2 para transformar a variável "rich" em fatores.
+
+## Exercício (mais um)
+
+Crie a variável "kids2" que indica se o indivíduo tem algum filho (TRUE) ou nenhum (FALSE). Dica: essa é uma variável de texto, e não numérica.
+
+## Recodificando uma variável contínua com a função cut
+
+Quando vamos recodificar uma variável contínua, podemos usar a função _cut_. Vamos repetir o exemplo da criação da variável "rich", agora com "rich2":
+
+```{r}
+fake$rich2 <- cut(fake$income, 
+                  breaks = c(-Inf, 3000, Inf), 
+                  labels = c("não rico", "rico"))
+table(fake$rich2)
+```
+
+Algumas observações importantes: se a nova variável tiver 2 categorias, precisamos de 3 "break points"; "-Inf" e "Inf" são os símbolos do R para menos e mais infinito, respectivamente; por padrão, o R nao inclui o primeiro "break point" na primeira categoria, exceto se o argumento "include.lowest" for alterado para TRUE; também por padrão, os intervalos são fechados à direita, e abertos à esquerda (ou seja, incluem o valor superior que delimita o intervalor, mas não o inferior), exceto se "right" o argumento for alterado para FALSE.
+
+## Exercício
+
+Crie a variável "poupador", gerada a partir de avings\_year (que criamos anteriormente, antes de transformar "age" em meses), e que separa os indivíduos que poupam muito (mais de FM/$ 1000 por ano) dos que poupam pouco. Use a função _cut_.
+
+## Recodificando uma variável contínua com a função recode
+
+O equivalente da função _cut_ para variáveis categóricas, estejam elas como texto ou como fatores é a função _recode_, do pacote _dplyr_. Seu uso é simples e intuitivo. Vamos recodificar como exemplo a variável "educ":
+
+```{r}
+library(dplyr)
+fake$college <- recode(fake$educ, 
+                       "No High School Degree" = "No College",
+                       "High School Degree" = "No College",
+                       "College Incomplete" = "No College",
+                       "College Degree or more" = "College")
+table(fake$college)
+```
+
+Podemos comparar as mudanças com uma tabela de 2 entradas:
+
+```{r}
+table(fake$college, fake$educ)
+```
+
+## Exercício
+
+Crie a variável "economia", que os indivíduos que avaliam a economia (variável "economy") como "Good" ou melhor recebem o valor "positivo" e os demais recebem "negativo".
+
+## Ordenar linhas e remover linhas duplicadas:
+
+Finalmente, vamos ordenar linhas em um banco de dados e aprender a remover duplicidades. Com a função _order_, podemos gerar um vetor que indica qual a posição que cada linha deveria receber no ordenamento desejado. Vamos ordernar "fake" por renda.
+
+```{r}
+ordem <- order(fake$income)
+print(ordem)
+```
+
+Se aplicarmos um vetor numérico com um novo ordenaemnto à parte destinada às linhas no colchetes, receberemos o _data frame_ ordenado:
+
+```{r}
+fake_ordenado <- fake[ordem, ]
+head(fake_ordenado)
+```
+
+Poderíamos ter aplicado a função order diretamente dentro dos colchetes:
+
+
+```{r}
+fake_ordenado <- fake[order(fake$income), ]
+```
+
+Para encerrar, vamos duplicar articialmente parte dos nossos dados (as 10 primeiras linhas) usando o comando _rbind_, que "empilha" dois _data frames_:
+
+```{r}
+fake_duplicado <- rbind(fake, fake[1:10, ])
+```
+
+Vamos ordenar para ver algumas duplicidades:
+
+```{r}
+fake_duplicado[order(fake_duplicado$income), ]
+```
+
+E agora removemos da seguinte maneira:
+
+```{r}
+fake_novo <- fake_duplicado[!duplicated(fake_duplicado),]
+```
+
+Note que precisamos da exclamação (operador lógico "não") para ficar com todas as linhas __não__ duplicadas.
+
+## Item Adicional - Renomeando variáveis
+
+Em breve veremos como renomear variáveis de uma maneira bastante mais simples. Por enquanto, vamos aprender o jeito trabalhoso de renomear um variável.
+
+Podemos observar os nomes das variáveis de um _data frame_ usando o comando _names_:
+
+```{r}
+names(fake)
+```
+
+Os nomes das colunas são um vetor. Para renomear as variáveis, basta substituir o vetor de nomes por outro. Por exemplo, vamos manter todas as variáveis com o mesmo nome, exceto as três primeiras:
+
+```{r}
+names(fake) <- c("idade", "sexo", "educacao", "income", "savings", "marriage", "kids", "party", "turnout", "vote_history", "economy", "incumbent", "candidate", "vazia", "poupanca", "savings_year", "rich", "rich2", "college")
+head(fake)
+```
+
+Você não precisa de um vetor com todos os nomes sempre que precisar alterar algum. Basta conhecer a posição da variável que quer alterar. Veja um exemplo com "marriage", que está na sexta posição:
+
+```{r}
+names(fake)[6] <- "casado"
+```
+
+Simples, porém um pouco mala.
+
+## Fim

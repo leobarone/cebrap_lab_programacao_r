@@ -1,332 +1,362 @@
-# Continuando com o Dplyr: Group by, Summarise, Arrange e Slice
-
-## Novos verbos e dados de survey
-
-No tutorial passado vimos 4 dos principais verbos do _dplyr_: _rename_, _select_, _mutate_ (para operações de colunas) e _filter_ (para seleção de casos). Não produzimos, entretanto, uma das operações mais importantes na manipulação de _data\_frames_: o agrupamento de casos a partir de uma ou mais variáveis.
-
-O agrupamento de casos em uma base de dados convencional é bastante simples, como veremos a seguir. No entanto, ao trabalharmos com dados de survey, como é o caso da TICDOM, precisamos considerar o desenho amostral que produziu os dados. Ao agruparmos observações para calcularmos a média de uma variável em dados de survey, precisamos considerar, por exemplo, o peso de cada observação na amostra. Por essa razão, vamos abandonar temporariamente a TICDOM para avançar no aprendizado do _dplyr_. Uma vez que os verbos novos forem bem compreendidos, voltaremos à base para ver como realizar o mesmo procedimento com dados provenientes de survey.
-
-## Fake data
-
-Para esta atividade, vamos trabalhar com um banco de dados falso criado para a atividade.
-
-Abra o banco de dados usando _read\_delim_:
-
-```{r}
-library(tidyverse)
-url_fake_data <- "https://raw.githubusercontent.com/leobarone/ifch_intro_r/master/data/fake_data.csv"
-fake <- read_delim(url_fake_data, delim = ";", col_names = T)
-```
-Fakeland é uma democracia muito estável que realiza eleições presidenciais a cada 4 anos. Vamos trabalhar com o conjunto de dados falso de cidadãos individuais de Fakeland que contém informações sobre suas características básicas e opiniões / posições políticas (falsas). A descrição das variáveis está abaixo:
-
-- _age_: idade
-- _sex_: sexo
-- _educ_: nível educacional
-- _income_: renda mensal medida em dinheiro falso (FM \ $)
-- _savings_: Dinheiro falso total (FM \ $) na conta de poupança
-- _marriage_: estado civil (sim = casado)
-- _kids_: número de filhos
-- _party_: afiliação partidária
-- _turnout_: intenção de votar nas próximas eleições
-- _vote\_history_: número de eleições presidenciais votou desde as eleições de 2002
-- _economy_: opinião sobre o desempenho da economia nacional
-- _incumbent_: opinião sobre o desempenho do presidente
-- _candidate_: candidato preferido
-
-
-## Agrupando com _filter_ e _pull_
-
-Vamos supor que nos interessa comparar a renda entre grupos de sexo. Poderíamos, rapidamente selecionar as linhas de um dos grupos de sexo com o verbo _filter_:
-
-```{r}
-fake %>%
-  filter(sex == "Male") 
+---
+title: "Manipulação de dados em R"
+author: "Leonardo Sangali Barone"
+date: "April 03, 2017"
+output: pdf_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Manipulação de dados com a gramática do pacote dplyr
+
+## Introdução ao pacote dplyr
+
+Um dos aspectos mais incríveis da linguagem R é o desenvolvimento de novas funcionalidades pela comunidade de usuários. Algumas das melhores soluções desenvolvidas são relacionadas à "gramática para bases de dados", ou seja, à maneira como importamos, organizamos, manipulamos e extraímos informações das bases de dados.
+
+Neste tutorial vamos nos concentrar na "gramática" mais popular: o pacote _dplyr_. Já vimos um pouco como ele funciona no exemplo, com dados dos saques do Bolsa Família em janeiro de 2017. Voltemos a este exemplo, mas agora com uma versão mais simples dos dados extraído aleatoriamente do banco original, com apenas 10 mil saques.
+
 ```{r}
-fake %>%
-  filter(sex == "Female") 
+library(readr)
+saques_amostra_201701 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/saques_amostra_201701.csv", delim = ";", col_names = T)
 ```
 
-Com o comando _pull_, podemos 'retirar' de um data frame uma coluna e tratá-la como um vetor destacado. _pull_ é mais um (de vários) verbos do _dplyr_:
+Para explorar os dados vamos usar uma função nova, _glimpse_, aplicável a __tibbles__:
 
 ```{r}
-fake %>%
-  filter(sex == "Male") %>%
-  pull(income)
+glimpse(saques_amostra_201701)
 ```
 
-E, se adicionarmos à 'pipeline' um comando simples de estatística descritiva -- média, por exemplo -- calculamos uma estatística para o grupo para o qual selecionamos com _filter_:
+## Renomeando variáveis
+
+Com certa frequência, obtemos dados cujos nomes das colunas são compostos, contêm acentuação, cecedilha e demais caracteres especiais. Dá um tremendo trabalho usar nomes com tais característica. O ideal é termos nomes sem espaço (você pode usar ponto ou subscrito para separar palavras em um nome composto), preferencialmente com letras minísculas sem acento e números, apenas. Vamos começar renomeando algumas variáveis no nosso banco de dados, cujos nomes vemos com o comando abaixo:
 
 ```{r}
-fake %>%
-  filter(sex == "Male") %>%
-  pull(income) %>%
-  mean()
+names(saques_amostra_201701)
 ```
 
-Note que não utilizamos o símbolo de atribuição '<-' e, portanto, não armazenamos o resultado em nenhum objeto.
-
-Note também que podemos adicionar à pipeline qualquer função que não seja 'verbo' do _dplyr_, como comando _mean_.
-
-Essa estratégia funciona para calcular uma medida qualquer para um grupo. Mas, em geral, interessa 'sumarizar' um variável -- como renda -- por uma variável de grupo -- como sexo -- sem destacar cada uma das categorias. Vamos ver como fazer isso.
-
-## _summarise_
-
-Uma maneira altenartiva ao que acabamos de realizar é utilizar o verbo _summarise_. Com ele, não precisamos extrair a variável do data frame para gerar um sumário estatístico. Veja como é simples:
+O primeiro argumento da função _rename_ deve ser a base de dados cujos nomes das variáveis serão renomeados. Depois da primeir vírgula, inserimos todos as modificações de nomes, novamente separadas por vírgulas, e da seguinte maneira. Exemplo: nome\_novo = nome\_velho. Caso os nomes tenha espaço, como no nosso exemplo, é preciso usar o acento agudo antes e depois do nome antigo para que o R entenda onde ele começa e termina. Exemplo: nome|_novo = \`Nome Velho\`. Veja o exemplo, em que damos novos nomes às variáveis "UF" e "Nome Município"
 
 ```{r}
-fake %>%
-  filter(sex == "Male") %>%
-  summarise(media_homens = mean(income))
+saques_amostra_201701 <- rename(saques_amostra_201701, uf = UF, munic = `Nome Município`)
 ```
 
-```{r}
-fake %>%
-  filter(sex == "Female") %>%
-  summarise(media_mulheres = mean(income))
+## Exercício
+
+Renomeie as variáveis "Código SIAFI Município", "Nome Favorecido", "Valor Parcela", "Mês Competência" e "Data do Saque" como "cod_munic", "nome", "valor", "mes", "data_saque", respectivamente.
+
+```{r, include = F}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  rename(cod_munic = `Código SIAFI Município`,
+          nome = `Nome Favorecido`, 
+          valor = `Valor Parcela`, 
+          mes = `Mês Competência`,
+          data_saque = `Data do Saque`)
 ```
 
-## Agrupando com _group\_by_ by e _summarise_
+## Uma gramática, duas formas
 
-Para agrupar os dados por uma ou mais variáveis na 'gramática' do _dplyr_ utilizamos o verbo _group\_by_ em combinação com _summarise_. Veja um exemplo antes de detalharmos seu uso:
+Se voltarmos ao exemplo do começo da apostila, veremos que usamos uma sintaxe ligeiramente diferente para a mesma tarefa, renomear variáveis. Vamos olhar para ela:
 
-```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(media_renda = mean(income))
+```{r, eval = F}
+saques_amostra_201701 <- saques_amostra_201701 %>% rename(uf = UF, munic = `Nome Município`)
 ```
 
-Veja que o resultado é uma tabela de duas linhas que contém a média de renda para grupo de sexo. O primeiro passo é justamente indicar qual é a variável -- discreta -- pela qual queremos agrupar os dados. Fazemos isso com _group\_by_
+Usando o operador %>%, denominado _pipe_, retiramos de dentro da função _rename_ o banco de dados cujas variáveis serão renomeadas. Essa outra sintaxe tem uma vantagem grande sobre a anterior: ela permite emendar uma operação de transformação do banco de dados na outra. Veremos adiante como fazer isso. Por enquanto, tenha em mente que o resultado é o mesmo para qualquer uma das duas formas.
 
-Na sequência, utilizamos _summarise_ para criar uma lista das operações que faremos em outras variáveis ao agrupar os dados. Por exemplo, estamos calculando a média da renda, que aparecerá com o nome 'media\_renda', para cada um dos grupos de sexo.
+## Selecionando colunas
 
-Execute novamente o código acima e observe atentamente sua estrutura antes de avançar.
-
-O verbo _summarise_ permite mais de uma operação por agrupamento. Por exemplo, podemos calcular o desvio padrao da renda, a media da idade ('age') e a soma do número de eleições nas quais votou ('vote\_history'):
+Algumas colunas são claramente dispensáveis em nosso banco de dados. Por exemplo, já sabemos que "Código Função", "Código Subfunção", "Código Programa" e "Código Ação" não variam entre as linhas, pois todas se referem ao Programa Bolsa Família. Vamos ficar apenas com as variáveis que já havíamos renomeado.
 
 ```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(media_renda = mean(income),
-            stdev_renda = sd(income),
-            media_idade = mean(age),
-            soma_eleicoes = sum(vote_history))
+saques_amostra_201701 <- select(saques_amostra_201701, uf, munic, cod_munic, nome, valor, mes, data_saque)
 ```
 
-Simples, não? O comando _summarise_ é bastante flexível e aceita diversas operações. Veremos as mais comuns adiante.
-
-E se quisermos, agora, utilizar mais de uma variável para agrupar os dados? Por exemplo, e se quisermos agrupar por sexo e candidato de preferência, como fazemos?
-
-Basta adicionar outra variável dentro do comando _group\_by_:
+ou usando o operador %>%, chamado __pipe__,
 
 ```{r}
-fake %>%
-  group_by(sex, candidate) %>%
-  summarise(media_renda = mean(income))
-```
-
-Observe bem a estrutura dos resultados que obtivemos. Em primeiro lugar, o resultado é sempre um data frame. Sempre que estivermos preparando os dados para gerar tabelas ou com gráficos, como veremos no encontro seguinte, produziremos um data frame para servir de 'input' para o gráfico ou tabela.
-
-Em segundo, cada variável utilizada para agrupamento aparece como uma coluna diferente no novo data frame. Os dados estão 'colapsados' ou 'achatados' em um número de linhas que corresponde ao total de combinações de categorias das variáveis de agrupamento (por exemplo, "Female e Rilari", "Female e Trampi", etc).
-
-Se pararmos para pensar, o data frame resultante do último comando tem exatamente o número de células de uma tabela de duas entradas ('crosstab'), mas as informações das margens da tabela estão como variáveis. Veremos como modificar isso adiante.
-
-Finalmente, cada nova variável gerada com _summarise_ em nosso data frame 'achatado' recebe uma coluna. Para 'sumarizar' uma variável -- tirar média, somatória, contar, etc -- precisamos sempre de uma função de sumário.
-
-## Funções de sumário estatístico
-
-Vamos ver exemplos das funções de sumário estatístico mais utilizadas dentro do verbo _summarise_.
-
-1- Média
-
-```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(media = mean(income))
-```
-
-2- Desvio padrão
-
-```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(desvpad = sd(income))
+saques_amostra_201701 <- saques_amostra_201701 %>% select(uf, munic, cod_munic, nome, valor, mes, data_saque)
 ```
 
 
-3- Mediana
+## Operador %>% para "emendar" tarefas
 
-```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(mediana = median(income))
+O que o operador __pipe__ faz é simplesmente colocar o primeiro argumento da função (no caso acima, o _data frame_), fora e antes da própria função. Ele permite lermos o código, informalmente, da seguinte maneira: "pegue o data frame x e aplique a ele esta função". Veremos abaixo que podemos fazer uma cadeia de operações ("pipeline"), que pode ser lida informalmente como: "pegue o data frame x e aplique a ele esta função, e depois essa, e depois essa outra, etc".
+
+A grande vantagem de trabalharmos com o operador %>% é não precisar repetir o nome do _data frame_ diversas vezes ao aplicarmos a ele um conjunto de operações.
+
+Use o comando _rm_ para deletar a base de dados e abra novamente. Vejamos agora como usamos o operador %>% para "emendar" tarefas:
+
+```{r, include = F}
+saques_amostra_201701 <- read_delim("https://raw.githubusercontent.com/leobarone/FLS6397/master/data/saques_amostra_201701.csv", delim = ";", col_names = T)
 ```
 
-4- Quantis (no exemplo, quantis 10\%, 25\%, 75\%, 90\%)
-
 ```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(quantil_10 = quantile(income, probs = 0.1),
-            quantil_25 = quantile(income, probs = 0.25),
-            quantil_75 = quantile(income, probs = 0.75),
-            quantil_90 = quantile(income, probs = 0.9))
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  rename(uf = UF, munic = `Nome Município`,
+         cod_munic = `Código SIAFI Município`, nome = `Nome Favorecido`,
+         valor = `Valor Parcela`, mes = `Mês Competência`, data_saque =`Data do Saque`)  %>%
+  select(uf, munic, cod_munic, nome, valor, mes, data_saque)
 ```
 
-5- Mínimo e máximo
+Em uma única sequência de operações, alteramos os nomes das variáveis e selecionamos as que permaneceriam no banco de dados. Esta forma de programa, tenha certeza, é bastante mais econômica.
+
+Voltemos agora aos dados. Se observarmos as dimensões da nossa base dados, veremos que ela tem 10 mil linhas, mas apenas 7 colunas agora:
 
 ```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(minimo = min(income),
-            maximo = max(income))
+dim(saques_amostra_201701)
 ```
 
-6- Contagem e soma
+## Transformando variáveis
+
+Vimos no exemplo que a variável valor, apesar de conter números, foi lida como texto. Isso ocorre por que o R não entende o uso da vírgula como separador de mlhar. Como resolver um problema desses?
+
+Usaremos a função _mutate_ para operar transformações nas variáveis existentes e criar variáveis novas. Há inúmeras transformações possíveis e elas lembram bastante as funções de outros softwares, como MS Excel. Vamos ver algumas das mais importantes.
+
+Um exemplo simples: vamor gerar uma nova variável com os nomes dos beneficiários em minúsculo usando a função _tolower_. Veja:
 
 ```{r}
-fake %>%
-  group_by(sex) %>%
+glimpse(saques_amostra_201701)
+saques_amostra_201701 <- saques_amostra_201701 %>% mutate(nome_min = tolower(nome))
+```
+
+ou, em uma forma alternativa,
+
+```{r}
+saques_amostra_201701 <-mutate(saques_amostra_201701, nome_min = tolower(nome))
+```
+
+Use o comando View para visualizar o resultado da coluna criada à direita do banco de dados. Simples, não? Basta inserimos dentro do comando mutate a expressão da transformação que queremos.
+
+Vamos a um exemplo um pouco mais difícil: substituir vírgula por vazio em um texto e, a seguir, indicar que o texto é, na verdade, um número. Em vez de criar uma nova variável "valor", vamos apenas alterar a variável já existente duas vezes. Com a função _gsub_, faremos a substituição da vírgula por vazio e com a função _as.numeric_ faremos a transformação texto-número.
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(valor_num = gsub(",", "", valor)) %>% 
+  mutate(valor_num = as.numeric(valor_num))
+```
+
+A operação reversa a _as.numeric_, que transforma número em texto, é _as.character_. Vamos explorar as funções de texto e tranformação de variáveis em outro tutorial.
+
+Precisamos usar _mutate_ duas vezes? Não. As duas formas abaixo são equivalentes à acima:
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(valor_num = as.numeric(gsub(",", "", valor)))
+```
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(valor_num = gsub(",", "", valor), valor_num = as.numeric(valor_num))
+```
+
+Vamos ver um novo exemplo. Faremos agora duas operações separadas, cada uma resultando em uma nova variável: dividiremos o valor por 3.2 para transformar o valor em dólares; e somaremos R$ 10 ao valor, pelo simples exercício de ver a transformação.
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(valor_dolar = valor / 3.2, valor10 = valor_num + 10)
+```
+
+Use o comando _View_ para ver as novas variáveis no banco de dados.
+
+As operações de soma, subtração, divisão, multiplicação, módulo entre mais de uma variável ou entre variáveis e valores são válidas e facilmente executadas como acima mostramos.
+
+Nem todas as transformações de variáveis, porém, são operações matemáticas. Vamos transformar a variável valor em uma nova variável que indique se o valor sacado é "Alto" (acima de R\$ 300) ou "Baixo" (abaixo de R\$ 500) com o comando _cut_:
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(valor_categorico = cut(valor_num, c(0, 300, Inf), c("Baixo", "Alto")))
+```
+
+E se quisermos recodificar uma variável de texto? Por exemplo, vamos examinar a variável "mes". Ela contém o "Mês de Competência" do saque. Usemos a função _table_ para examiná-la:
+
+```{r}
+table(saques_amostra_201701$mes)
+```
+
+São 3 valores possíveis em nossa amostra: "11/2016", "12/2016" e "01/2017" em nossa amostra. Vamos gerar uma nova variável, ano, que indica apenas se a competência é 2016 ou 2017. Vamos começar fazendo uma cópia da variável original e depois substituiremos cada um dos valores:
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(ano = mes,
+         ano = replace(ano, ano == "11/2016", "2016"),
+         ano = replace(ano, ano == "12/2016", "2016"),
+         ano = replace(ano, ano == "01/2017", "2017"))
+```
+
+Um pouco trabalhoso, mas cumpre o objetivo. Uma maneira mais inteligente é usar o comando _recode_:
+
+```{r}
+saques_amostra_201701 <- saques_amostra_201701 %>% 
+  mutate(ano = recode(mes, "11/2016" = "2016", "12/2016" = "2016", "01/2017" = "2017"))
+```
+
+Com as operações matemáticas, as transformações _as.numeric_ e _as.character_ e os comandos _cut_, _replace_ e _recode_ podemos fazer praticamente qualquer recodifição de variáveis que envolva texto e números. A exceção, por enquanto, serão as variáveis da classe _factor_, que já vimos em tutorais anteriores. Para os interessados em expressões regulares, recomendo a leitura do arquivo "help" da família da função _gsub_, que inclui _grep_, _regexpre_ e outras.
+
+## Exercício
+
+Use os exemplos acima para gerar novas variáveis conforme instruções abaixo:
+
+- Faça uma nova divisão da variável "valor" a seu critério. Chame a nova variável de "valor\_categorico2".
+- Cria uma variável "valor_euro", que é o valor calculado em Euros.
+- Recodifique "valor\_categorico" chamando as categorias de "Abaixo de R\$300" e "Acima de R\$300". Chame a nova variável de "valor\_categorico3".
+- Usando a função _recode_ Recodifique "mes" em 3 novos valores: "Novembro", "Dezembro" e "Janeiro". Chame a nova variável de "mes\_novo".
+- Usando a função _replace_ Recodifique "mes" em 3 novos valores: "Novembro", "Dezembro" e "Janeiro". Chame a nova variável de "mes\_novo2".
+
+## Filtrando linhas
+
+Por vezes, queremos trabalhar apenas com um conjunto de linhas do nosso banco de dados. Por exemplo, se quisermos selecionar apenas os beneficiários do estado do Espírito Santo e salvarmos em um objeto chamado saques_amostra_ES:
+
+```{r}
+saques_amostra_ES <- saques_amostra_201701 %>% filter(uf == "ES")
+```
+ou 
+
+```{r}
+saques_amostra_ES <-filter(saques_amostra_201701, uf == "ES")
+```
+
+Até o uso da função _filter_, não há nada de novo para nós. A novidade está na condição uf == "ES", que indica que apenas as linhas cuja variável _uf_ assumo valor igual a ES devem ser consideradas. Em primeiro lugar, qual é a razão de usarmos duas vezes o sinal de igualdade (==)? Normalmente, usamos um igual para atribuir algo a um nome ou para definir algo igual a um valor. Neste caso, estamos comparando duas coisas, ou seja, estamos verificando se o conteúdo de cada linha é igual a um valor.
+
+Além da igualdade, poderíamos usar outros símbolos: maior (>). maior ou igual (>=), menor (<), menor ou igual (<=) e diferente (!=).
+
+Também utilizamos aspas em "ES". Como estamos comparando os valores para cada linha a um texto, devemos usar as aspas.
+
+Vamos supor agora que apenas os estados do Centro-Oeste nos interessam. Vamos criar um novo _data frame_, chamado saques_amostra_CO, que atenda a este critério:
+
+```{r}
+saques_amostra_CO <- saques_amostra_201701 %>% 
+  filter(uf == "MT" | uf == "MS" | uf == "Df" | uf == "GO")
+```
+
+Note que, para dizer que queremos as quatro condições atendidas, utilizamos uma barra vertical. A barra é o símbolo "ou", e indica que todas as observações que atenderem a uma ou outra condição serão incluídas.
+
+Vamos supor que queremos estabelecer agora condições para a seleção de linhas a partir de duas variáveis. Por exemplo, queremos incluir observações do Mato Grosso e que também tenham ano de competência (variável que criamos acima) igual a 2016. O símbolo da conjunção "e" é "&". Veja como utilizá-lo:
+
+```{r}
+saques_amostra_MT_2016 <- saques_amostra_201701 %>% filter(uf == "MT" & ano == "2016")
+```
+
+Ao usar duas variáveis diferentes para filter e a conjunção "e", podemos escrever o comando separando as condições por vírgula e dispensar o operador "&":
+
+```{r}
+saques_amostra_MT_2016 <- saques_amostra_201701 %>% filter(uf == "MT", ano == "2016")
+```
+
+Você pode combinar quantas condições precisar. Se houver ambiguidade quanto à ordem das condições, use parênteses das mesma forma que usamos com operações aritméticas.
+
+## Exercício
+
+- Crie um novo _data frame_ apenas com as observações cujo mês de competência é janeiro.
+- Crie um novo _data frame_ apenas com as observações cujo valor é superior a R\$ 500.
+- Crie um novo _data frame_ apenas com as observações da região Sul.
+
+## Agrupando
+
+Por enquanto, por mais que transformássemos as variáveis do banco de dados ou selecionássemos linhas, as unidades continuavam a ser os saques realizados por cada beneficiário. E se, no entanto, nos interessar trabalhar no nível mais agregado? Voltemos ao exemplo do início do tutorial.
+
+Vamos começar produzindo um novo _data frame_, mas que agora contenha a informação de quantos saques foram realizados em cada UF:
+
+```{r}
+contagem_uf <- saques_amostra_201701 %>% 
+  group_by(uf) %>% 
+  summarise(contagem = n())
+```
+
+Veja que usamos simultaneamente 2 funções, _group\_by_ e _summarise_. Eles tem significado literal: na primeira, inserimos as variáveis pelas quais agruparemos o banco de dados. Na segunda, as operações de "sumário", ou seja, de condensação, que faremos com o banco de dados e com as demais variáveis. No exemplo acima, apenas contamos, usando a função n(), quantas linhas pertencem a cada uf, que é a variável de grupo.
+
+Vamos complicar um pouco mais. Suponhamos que, além da contagem, tenhamos interesse na soma, média, mediana, desvio padrão, mínimo, máximo dos valores no mesmo resultado. Neste caso, devemos inserir novas operações na função _summarize_, separadas por vírgula:
+
+```{r}
+valores_uf <- saques_amostra_201701 %>% 
+  group_by(uf) %>% 
   summarise(contagem = n(),
-            soma = sum(age))
+            soma = sum(valor),
+            media = mean(valor),
+            mediana = median(valor),
+            desvio = sd(valor),
+            minimo = min(valor),
+            maximo = max(valor))
 ```
 
-Importante: quando houver algum "NA" (missing value) em uma variável numérica, é preciso utilizar o argumento "na.rm = TRUE" dentro da função de sumário. Veja como ficaria o código caso houvesse algum "NA":
+Use _View_ para observar o resultado.
+
+A sessão _Useful Summary Functions_ do livro _R for Data Science_ traz uma relação mais completa de funçoes que podem ser usandas com _summarise_. O ["cheatsheet" da RStudio](https://github.com/rstudio/cheatsheets/raw/master/source/pdfs/data-transformation-cheatsheet.pdf) oferece uma lista para uso rápido.
+
+## Exercício
+
+Usando a variável "mes_novo", calcule a contagem, soma e média de valores para cada mês.
+
+## Mais de um grupo
+
+E se quisermos agrupar por mais de uma variável? Veja como fazer um agrupamento por "mes"" e "uf", reportando apenas a contagem de saques em cada combinação de grupos:
 
 ```{r}
-fake %>%
-  group_by(sex) %>%
-  summarise(media = mean(income, na.rm = TRUE))
+contagem_uf_mes <- saques_amostra_201701 %>% 
+  group_by(uf, mes) %>% 
+  summarise(contagem = n())
 ```
 
-A sessão Useful [Summary Functions](https://r4ds.had.co.nz/transform.html#summarise-funs) do livro R for Data Science traz uma relação mais completa de funçoes que podem ser usandas com summarise. O [“cheatsheet” da RStudio](https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf) oferece uma lista para uso rápido.
+Note que, agora, cada uf é repetida duas ou três vezes, uma para cada mês. Cada grupo gera uma nova coluna e as linhas representam exatamente a combinação de grupos de cada variável presente nos dados.
 
-## Transformando um agrupamento em um "crosstab" e exportando
-
-Vamos retomar o exemplo do agrupamento por duas variáveis, sexo e candidato de preferência:
+Finalmente, podemos utilizar múltiplas variáveis de grupo em conjunto e também gerar um sumário com diversas varáveis, como no exemplo a seguir, que combina parte dos dois anteriores:
 
 ```{r}
-fake %>%
-  group_by(sex, candidate) %>%
-  summarise(media_renda = mean(income))
+valores_uf_mes <- saques_amostra_201701 %>% 
+  group_by(uf, mes) %>% 
+  summarise(contagem = n(),
+            soma = sum(valor),
+            media = mean(valor),
+            desvio = sd(valor))
 ```
 
-Esse formato não costuma ser o usual em apresentação de dados. O mais comum é termos a informação que consta em nossas duas primeiras colunas como margens em uma tabela de duas entradas.
+## Novo _data frame_ ou tabela para análise?
 
-Na linguagem de manipulação de dados, o resultado acima está no formato "long" e todas as variáveis são representadas como colunas. Uma tabela de 2 entradas corresponde ao formato "wide".
-
-Há dois verbos no _dplyr_ que transformam "long" em "wide" e vice-versa: _spread_ e _gather_. Como _spread_, tranformamos o nosso resultado acima na tabela desejada:
+O uso das funções _group\_by_ e _summarise_ pode ter 2 propósitos: produzir uma tabela para análise, como fizemos acima, ou gerar um novo _data frame_. Basicamente, os usos dependem do tamanho redução que geramos no banco de dados. Por exemplo, podemos gerar os totais de valores transferidos para cada município (que, se tivessemos o banco completo, geraria um banco de aprox. 5,5 mil linhas) para, a seguir, inserí-lo nos dados originais como coluna. Por enquanto, ainda não aprendemos a relacionar dois _data frames_ entre si, mas vejamos como seria a base de dados com municípios como linhas:
 
 ```{r}
-fake %>%
-  group_by(sex, candidate) %>%
-  summarise(media_renda = mean(income)) %>%
-  spread(sex, media_renda)
+saques_amostra_munic <- saques_amostra_201701 %>% 
+  group_by(munic) %>% 
+  summarise(contagem = n(),
+            soma = sum(valor),
+            media = mean(valor))
 ```
 
-_spread_ precisa de 2 argumentos: a "key", que a variável que irá para a margem superior da tabela, e "value", que é a variável que ficará em seu conteúdo.
+## Ordenando a base de dados
 
-É fácil, inclusive, exportá-la para um editor de planilhas com a função _write\_csv_ (do pacote _readr_) ao final do pipeline:
+Quando trabalhamos com bases de dados muito grandes, faz pouco sentido ordená-las. Entretanto, quando trabalhamos numa escala menor, com poucas linha, como nos exemplos acima, convém ordenar a tabela (veja que, neste ponto, faz pouco sentido diferenciar tabela de _data frame_, pois tornam-se sinônimos) por alguma variável de interesse.
+
+Se quisermos ordenar, de forma crescente, a tabela de valores por uf pela soma de valores, basta usar o comando _arrange_:
 
 ```{r}
-fake %>%
-  group_by(sex, candidate) %>%
-  summarise(media_renda = mean(income)) %>%
-  spread(sex, media_renda) %>%
-  write_csv("tabela_candidato_sexo_renda.csv")
+valores_uf <- valores_uf %>% arrange(soma)
 ```
 
-Vá à sua pasta de trabalho e verifique que sua tabela está lá.
-
-Veja que, como introduzimos um comando de exportação ao final do pipelina, não geramos nenhum objeto. Não há símbolo de atribuição em nosso código. Esse é um dos objetivo do uso do pipe (%>%): reduzir o número de objetos intermediários gerados.
-
-### Spread e Gather caindo em desuso
-
-Há notícias de que os verbos _spread_ e _gather_ cairão em desuso. Seus substituos serão _pivot\_wider_ e _pivot\_longer_. As 4 funções são parte do pacote _tidyr_, componente do _tidyverse_. O uso das novas funções é bem similar ao das antigas, e veja como fica a substituição de _spread_ por _pivot\_wider_ no código que produzimos. É possível que sua instalação do _tidyverse_ não contenha as novas funções e que o código abaixo não funcione.
+Apenas para ilustrar, poderíamos ter usado o comando _arrange_ diretamente ao gerar a tabela:
 
 ```{r}
-fake %>%
-  group_by(sex, candidate) %>%
-  summarise(media_renda = mean(income)) %>%
-  pivot_wider(names_from = sex,
-              values_from = media_renda)
+valores_uf <- saques_amostra_201701 %>% 
+  group_by(uf) %>% 
+  summarise(contagem = n(),
+            soma = sum(valor),
+            media = mean(valor),
+            mediana = median(valor),
+            desvio = sd(valor),
+            minimo = min(valor),
+            maximo = max(valor)) %>%
+  arrange(soma)
 ```
 
-## Mutate com Group By
-
-Vamos supor que queremos manter os dados no mesmo formato, ou seja, sem 'achatá-los' por uma variável discreta, mas queremos uma nova coluna que represente a soma de uma variável por grupo -- para calcular percentuais de renda dentro de cada grupo de sexo, por exemplo. Vamos observar o resultado do uso conjunto de _group\_by_ e _mutate_. Para podermos observar o resultado, vamos armazenar os novos dados em um objeto chamado 'fake2' e utilizar o comando _View_. A última coluna de nossos dados agora é a soma da renda dentro de cada grupo.
+Se quisermos rearranjar uma tabela, agora em ordem decrescente de média de valores, por exemplo, usamos _desc_:
 
 ```{r}
-fake2 <- fake %>% 
-  group_by(sex) %>%
-  mutate(renda_grupo = mean(income))
-
-View(fake2)
+valores_uf <- valores_uf %>% arrange(desc(soma))
 ```
 
-Quando utilizarmos _group\_by_ sem o _summarise_, é importante "desagrupar" os data frame, ou "desligar o agrupamento". Caso contrário, o agrupamento continuará ativo e afetando todas as operações seguintes. Repetindo o código com o desagrupamento:
+Para usar mais de uma variável ao ordenar, basta colocá-las em ordem de prioridade e separá-las por vírgula. No exemplo abaixo ordenamos pela mediana (descendente) e depois pelo máximo:
 
 ```{r}
-fake2 <- fake %>% 
-  group_by(sex) %>%
-  mutate(renda_grupo = mean(income)) %>%
-  ungroup()
+valores_uf <- valores_uf %>% arrange(desc(mediana), maximo)
 ```
-
-## Mais verbos do _dplyr_: _arrange_ e _slice_
-
-Se quisermos ordenar, de forma crescente, nossos dados por idade, por exemplo, basta usar o comando _arrange_:
-
-```{r}
-fake %>% 
-  arrange(age)
-```
-
-Em ordem decrescente teríamos:
-
-```{r}
-fake %>% 
-  arrange(-age)
-```
-
-Se quisermos 'desempatar' o ordenamento por idade por uma segunda variável, basta adicioná-la ao _arrange_:
-
-```{r}
-fake %>% 
-  arrange(-age, vote_history)
-```
-
-Quando trabalhamos com bases de dados de survey faz pouco sentido ordená-las. Entretanto, quando trabalhamos numa escala menor, com poucas linha, ou com a produção de tabelas, como nos exemplos acima, convém ordenar a tabela (veja que, neste ponto, faz pouco sentido diferenciar tabela de data frame, pois tornam-se sinônimos) por alguma variável de interesse.
-
-Por exemplo, podemos ordenar os grupos de candidato de preferência por média de renda:
-
-```{r}
-fake %>% 
-  group_by(candidate) %>% 
-  summarise(media_renda = mean(income)) %>% 
-  arrange(media_renda)
-```
-
-Fácil e útil.
-
-Finalmente, vamos supor que queremos extrair da base de dados apenas os 10 indivíduos de menor idade Como "recortar" linhas dos dados pela posição das linhas?
-
-Em primeiro lugar, vamos ordenar os dados por idade. A seguir, vamos aplicar o verbo _slice_ para recortar as 10 primeiras linhas:
-
-```{r}
-fake %>% 
-  arrange(age) %>% 
-  slice(1:10)
-```
-
-Se quisessemos recortar do 25, por exemplo, ao último, sem precisar especificar qual é o número da última posição, utilizamos _n()_:
-
-```{r}
-fake %>% 
-  arrange(age) %>% 
-  slice(25:n())
-```
-
-Note que a aplicação de _slice_ não afeta em nada as colunas.
 
