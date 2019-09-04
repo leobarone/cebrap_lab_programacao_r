@@ -23,7 +23,7 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 - [02/09/2019](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20190902.md) - Introdução ao curso e R Básico
 - [03/09/2019](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20190903.md) - Do básico ao intermediário
-- [04/09/2019] - Manipulação de dados no R
+- [04/09/2019](https://github.com/leobarone/cebrap_lab_programacao_r/blob/master/roteiros/roteiro20190904.md) - Manipulação de dados no R
 - [05/09/2019] - Visualização de dados e a gramática de gráficos _ggplot2_
 - [06/09/2019] - Desafios
 
