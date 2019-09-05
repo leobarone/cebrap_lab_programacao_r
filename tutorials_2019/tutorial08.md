@@ -184,7 +184,7 @@ fake %>%
 
 ### Exercício
 
-Crie um gráfico de densidade de idade e adicione uma linha vertical que indica as pessoas com mais de 21 anos de idade. Ajuste a formatação para usar as mesmas cores do design do site do NIC.
+Crie um gráfico de densidade de idade e adicione uma linha vertical que indica as pessoas com mais de 21 anos de idade. Ajuste a formatação para usar as mesmas cores do design do site do CEBRAP.
 
 ## Gráficos com uma variável contínua e uma variável discreta
 
