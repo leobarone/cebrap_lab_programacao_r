@@ -29,7 +29,7 @@ O curso oferece uma iniciação à lógica de programação e ao uso da linguage
 
 ## Referências bibliográficas
 
-[Curso semestral USP](https://github.com/JonnyPhillips/FLS6397_2019)
+[Curso semestral USP](https://jonnyphillips.github.io/FLS6397_2019/)
 
 ## Referências bibliográficas
 
